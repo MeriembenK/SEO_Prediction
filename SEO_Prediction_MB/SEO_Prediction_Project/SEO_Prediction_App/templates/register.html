@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %} Registration {% endblock %}
+{% block content %}
+
+<style>
+  /* Style pour le formulaire */
+  .form-container {
+    max-width: 400px;
+    margin: 30px auto 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .form-container .form-content {
+    padding: 20px;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 5px;
+    text-align: left;
+    margin-left: 30px;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
+    margin: 0 auto;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-left: 30px;
+  }
+
+  button[type="submit"] {
+    background-color: #f5810d;
+    color: #fff;
+    padding: 10px 20px;
+    height: 40px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 55px;
+  }
+
+  button[type="submit"]:hover {
+    background-color: #b35100;
+   
+  }
+
+  h4 {
+    margin-top: 10px;
+  }
+
+  p{
+    margin-left: 60px;
+    margin-bottom: 3px;
+  }
+</style>
+
+<h4>Register here</h4>
+{% for message in messages %}
+{{ messages }}
+{% endfor %}
+
+<div class="form-container">
+  <div class="form-content">
+    <form method="post" action="/register/">
+      {% csrf_token %}
+
+      <div style="width: 20%; float: left;"></div> <!-- Colonne vide pour l'espacement à gauche -->
+      <div style="width: 80%; float: left;">
+        <label for="username">Username</label>
+        <input type="text" name="username" id="username" placeholder="Enter username" required>
+
+        <label for="email">Email</label>
+        <input type="email" name="email" id="email" placeholder="Enter email" required>
+
+        <label for="password">Password</label>
+        <input type="password" name="password1" id="password1" placeholder="Enter password" required>
+
+        <label for="password">Password Confirm</label>
+        <input type="password" name="password2" id="password2" placeholder="Confirm password" required>
+
+        <button type="submit">Register</button>
+        <br /><br />
+         <p>
+        Have an account? <a href="{% url 'login' %}" class="text-primary">Login</a>
+         </p>
+      </div>
+      <div style="clear: both;"></div> <!-- Nettoyer le flottement après les colonnes -->
+    </form>
+  </div>
+</div>
+{% endblock %}

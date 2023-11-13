@@ -1,0 +1,85 @@
+{% extends "register.html" %}
+{% block title %} Login {% endblock %}
+{% block content %}
+
+<style>
+  /* Style pour le formulaire */
+  form {
+    max-width: 300px;
+    margin: 30px auto 0;
+    text-align: center;
+    border: 1px solid #ccc;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+  label {
+    display: block;
+    text-align: left;
+    margin-bottom: 5px;
+  }
+
+  input[type="email"],
+  input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+  button[type="submit"] {
+    background-color: #f5810d;
+    color: #fff;
+    padding: 10px 20px;
+    height: 40px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  button[type="submit"]:hover {
+    background-color: #b35100;
+  }
+
+  h4 {
+    margin-top: 70px; /* Ajout de 20px de marge supérieure pour le titre */
+  }
+</style>
+
+<h4>Login here</h4>
+{% for message in messages %}
+{ { messages } }
+{% endfor %}
+
+{% if form.errors %}
+<p>
+  Please check your username and password.
+</p>
+{% else %}
+<p>
+    Please, use the folowing form to login.
+</p>
+{% endif %}
+
+<center>
+  <div class="login-form">
+    <form method="post" action="{% url 'login' %}">
+    
+    {% csrf_token %}
+
+    <label for="username">Username</label>
+    <input type="texte" name="username" id="username" placeholder="Enter username" required>
+
+    <label for="password">Password</label>
+    <input type="password" name="password" id="password" placeholder="Enter password" required>
+
+    <button type="submit">Connect</button>
+  </form>
+  <a href="#"> 
+  Forgotten password?
+  </a>
+</div>
+</center>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% block title %} Dashboard {% endblock %}
+
+{% block content %}
+<h1> Dashboard</h1>
+Hello, {{request.user.username}}
+<p>Welcome</p>
+<a href="{% url 'logout' %}">Logout </a>
+{% endblock %}

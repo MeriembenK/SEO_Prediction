@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+{% if user.is.authenticated %}
+<button type="submit"><a href="/logout">Se déconnecter</a></button>
+
+{% else %}
+
+<button type="submit"><a href="/register">S'authentifier</a></button>
+<button type="submit"><a href="/login">Se connecter</a></button>
+
+{% endif %}
+{% endblock %}
