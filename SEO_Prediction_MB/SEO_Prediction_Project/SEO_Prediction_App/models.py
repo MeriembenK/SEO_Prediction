@@ -16,7 +16,7 @@ class Keyword(models.Model):
 
 
 class Data(models.Model):
-    keyword = models.CharField(max_length=2150, null=True)  # Champ pour Keyword
+    Thekeyword = models.CharField(max_length=2150, null=True)  # Champ pour Keyword
     Position = models.PositiveIntegerField(null=True)  # Champ pour la position
     Url = models.CharField(max_length=200, null=True)  # Champ pour l'URL
     Top10 = models.BooleanField(null=True)  # Champ pour Top 10 (0 ou 1)
@@ -93,7 +93,7 @@ class Data(models.Model):
     amphtml_link_element = models.CharField(max_length=150, null=True) # Champ pour amphtml Link Element
     Size_bytes = models.FloatField(null=True)# Champ pour Size (bytes)
     Word_count = models.FloatField(null=True)# Champ pour Word Count
-    Sentence_Count = models.FloatField(null=True)# Champ pour sentece Count
+    Sentence_Count = models.FloatField(null=True)# Champ pour sentence Count
     Average_words_per_sentence = models.CharField(max_length=150, null=True) # Champ pour Average Words Per Sentence
     Flesch_reading_ease_score = models.FloatField(null=True)# Champ pour Flesch Reading Ease Score
     Readability = models.CharField(max_length=30, null=True) # Champ pour Readability
@@ -138,4 +138,6 @@ class Data(models.Model):
     H2_1_score = models.FloatField(null=True)  # Champ pour H2-1 score
     H2_2_score = models.FloatField(null=True)  # Champ pour H2-2 score
     Meta_Robots_1_score = models.FloatField(null=True)  # Champ pour Meta Robots 1 score
-    Url_score = models.FloatField(null=True)  # Champ pour Url score
+    Date_added = models.DateField(null=True, blank=True)
+    Url_Score = models.FloatField(null=True)  # Champ pour Url score
+    

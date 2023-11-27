@@ -4,6 +4,8 @@ import pandas as pd
 import django
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from datetime import datetime
+
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'SEO_Prediction_Project.settings')
 django.setup()
@@ -35,14 +37,10 @@ def import_data_from_csv_files(directory_path):
 
                 
                 keyword_name = os.path.splitext(filename)[0]
-                keyword = Keyword.objects.get(Keyword=keyword_name)
+                Thekeyword = Keyword.objects.get(Keyword=keyword_name)
 
-                url = row.get('Url', '')
-
-                existing_data = Data.objects.filter(Url=url).first()
-                                
-                      
                 dseo_yourtext_guru_value = row.get('DSEO yourtext_guru', '')
+                Score_1fr_value = row.get('Score_1fr', ''),
                 h1_2_score_value = row.get('H1-2 score', ''),
                 mobile_cumulative_layout_shift_lab_value = row.get('Mobile Speed Index Lab', ''),
                 mobile_cumulative_layout_shift_terrain_value = row.get('Mobile Cumulative Layout Shift Terrain', ''),
@@ -55,6 +53,13 @@ def import_data_from_csv_files(directory_path):
                 mobile_time_to_interactive_lab_value = row.get('Mobile Time to Interactive Lab', ''),
                 mobile_total_blocking_time_lab_value = row.get('Mobile Total Blocking Time Lab', ''),
                 soseo_yourtext_guru_value = row.get('SOSEO yourtext_guru', ''),
+
+                if isinstance(Score_1fr_value, tuple) and len(Score_1fr_value) > 0:
+                   Score_1fr_value = Score_1fr_value[0]
+                if Score_1fr_value:
+                   Score_1fr_value = float(Score_1fr_value)
+                else:
+                    Score_1fr_value = None
 
                 if isinstance(dseo_yourtext_guru_value, tuple) and len(dseo_yourtext_guru_value) > 0:
                    dseo_yourtext_guru_value = dseo_yourtext_guru_value[0]
@@ -163,7 +168,7 @@ def import_data_from_csv_files(directory_path):
                 
                 
                 data = Data(
-                    keyword=row.get('Keyword', ''),
+                    Thekeyword=row.get('Keyword', ''),
                     Url=row.get('Url', ''),
                     Top10=row.get('Top10', ''),
                     Position=row.get('Position', ''),
@@ -197,7 +202,7 @@ def import_data_from_csv_files(directory_path):
                     Mobile_cumulative_layout_shift_lab =  mobile_cumulative_layout_shift_lab_value,
                     SOSEO_yourtext_guru = soseo_yourtext_guru_value,
                     DSEO_yourtext_guru= dseo_yourtext_guru_value,
-                    Score_1fr = row.get('Score_1fr', ''),
+                    Score_1fr = Score_1fr_value,
                     Content_type = row.get('Content Type', ''),
                     Status_code = row.get('Status Code', ''),
                     Status = row.get('Status', ''),
@@ -284,52 +289,49 @@ def import_data_from_csv_files(directory_path):
                     H2_1_score = row.get('H2-1 score', ''),
                     H2_2_score = row.get('H2-2 score', ''),
                     Meta_Robots_1_score = row.get('Meta Robots 1 score', ''),
-                    Url_score = row.get('Url score', ''),                 
+                    Url_Score = row.get('Url score', ''),     
+                    Date_added=datetime.now()            
 
                  )
-                
-                if existing_data:
-                    # Si les données existent déjà, mettez à jour les champs appropriés
-                    existing_data.Http_code_babbar = row.get('HTTP code BABBAR', '')
-                    existing_data.Ttfb_babbar = row.get('TTFB (en ms) BABBAR', '')
-                    # Mettez à jour d'autres champs de la même manière
-                    existing_data.save()
-                    
-                else :    
-                  data.save()  # Enregistrez l'objet Data dans la base de données
+                  
+                data.save()  # Enregistrez l'objet Data dans la base de données
+
 class MyHandler(FileSystemEventHandler):
     def on_modified(self, event):
         if event.is_directory:
             return
         if event.src_path.endswith(".csv"):
             print(f"Modification détectée dans le fichier: {event.src_path}")
-            import_keywords_from_csv(data_sets_directory)
-            import_data_from_csv_files(data_sets_directory)
+            try:
+                import_keywords_from_csv(data_sets_directory)
+                import_data_from_csv_files(data_sets_directory)
+            except pd.errors.EmptyDataError:
+                print(f"Le fichier {event.src_path} est vide ou ne contient pas de colonnes.")
+            except Exception as e:
+                print(f"Erreur lors de la mise à jour des données : {e}")
+
 
 
 if __name__ == "__main__":
-     #import_keywords_from_csv(data_sets_directory)  # Importez d'abord les mots-clés
-     #import_data_from_csv_files(data_sets_directory)  # Ensuite, importez les données
+   
+     event_handler = MyHandler()
+     observer = Observer()
+     observer.schedule(event_handler, path=data_sets_directory, recursive=False)
+     observer.start()
 
-
-     # Supprimez toutes les instances du modèle Data
-     #Data.objects.all().delete()
-     #Supprimez toutes les instances du modèle Keyword
-     #Keyword.objects.all().delete()
-     
-    event_handler = MyHandler()
-    observer = Observer()
-    observer.schedule(event_handler, path=data_sets_directory, recursive=False)
-    observer.start()
-
-    try:
+     try:
         while True:
-            time.sleep(1)  # Attendez pour détecter les modifications
-    except KeyboardInterrupt:
+            time.sleep(1) 
+     except KeyboardInterrupt:
         observer.stop()
-    observer.join()
-
-
+     observer.join()
+"""
+# Delete all objects in the Data and Keyword models
+Data.objects.all().delete()
+Keyword.objects.all().delete()
+"""
+print("All data and keywords have been deleted.")
+  
 data_count = Data.objects.count()
 keyword_count = Keyword.objects.count()
 

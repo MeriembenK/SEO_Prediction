@@ -4,12 +4,12 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'SEO_Prediction_Project.settings')
 django.setup()
 
-from SEO_Prediction_App.models import Trip
+from SEO_Prediction_App.models import Data
 from django.db.models import Count
 
 def delete_duplicates():
-   # Récupérer toutes les données du modèle Trip
-    data = Trip.objects.all()
+   # Récupérer toutes les données du modèle Data
+    data = Data.objects.all()
 
     # Créer une liste pour stocker les doublons
     doublons = []
