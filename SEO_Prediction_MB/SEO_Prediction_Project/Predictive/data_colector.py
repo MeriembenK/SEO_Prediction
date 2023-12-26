@@ -15,15 +15,15 @@ import io
 import re
 import os
 import logging
-from webdriver_manager.chrome import ChromeDriverManager
 import requests
 from webdriver_manager.firefox import GeckoDriverManager
-from datetime import date
 from .SemantiqueValues import SemantiqueValues
  
 
 class DataColector:
 
+   
+    #Création de la classe Datacloctor
     def __init__(self) :
 
         logging.basicConfig()
@@ -35,7 +35,8 @@ class DataColector:
         
 
 
-    
+
+     #Avoir des mots clés similaires au mot clé sélectionné 
     def get_similar_keywords(self,keyword,nb_links):
         """
         Get the most similar keywords to a given keyword using the Semrush API.
@@ -69,18 +70,10 @@ class DataColector:
             return []
         
 
+
+
+    #Récupération de l'URL grace au mot clé Semurush
     def find_URL_by_Keyword_SEMRUSH(self,keywords_list,nb_links):
-        """
-        Get the first `nb_links` URLs for each keyword in the `keywords_list` using the Semrush API.
-
-        Args:
-            keywords_list (list): A list of keywords.
-            nb_links (int): The number of URLs to get for each keyword.
-
-        Returns:
-            pd.DataFrame: A DataFrame with the keywords, positions, and URLs.
-        """
-
         url_list = [] 
 
         #Pour chaque mot clé présent dans la liste, on récupère les premiers liens associés
@@ -119,42 +112,24 @@ class DataColector:
         df = df.sort_values(by = ['Keyword', 'Position'], ignore_index=True)
         
         return df
+    
 
+
+
+    #Avoir les top 10
     def get_top(self,df,nb_top):
-        """
-        Add a column to the DataFrame indicating whether the URL is in the top `nb_top` positions.
-
-        Args:
-            df (pd.DataFrame): The DataFrame to add the column to.
-            nb_top (int): The number of top positions.
-
-        Returns:
-            pd.DataFrame: The DataFrame with the new column.
-        """
+        
         try:
-            df['Top10'] = df['Position'].apply(lambda x: 0 if x <= nb_top else 1)
+            df['Top10'] = df['Position'].apply(lambda x: 1 if x <= nb_top else 0)
         except Exception:
             pass
         
         return df
 
-    #def multiprocessing_function(self,nb,df, function, pool=10, target=['Url'], join=['Url'], how='left', name=''):
-        """
-        Multiprocess a function over a list of URLs.
 
-        Args:
-            nb (int): The index of the DataFrame in the list.
-            df (pd.DataFrame): The DataFrame to process.
-            function (function): The function to multiprocess.
-            pool (int): The number of processes to use.
-            target (list): The list of columns to use to identify the URLs.
-            join (list): The list of columns to use to join the DataFrame with the results of the function.
-            how (str): The type of join to use.
-            name (str): The name of the DataFrame to be stored in the list.
 
-        Returns:
-            pd.DataFrame: The DataFrame with the results of the function.
-        """
+
+
     def multiprocessing_function(self,nb,df, function, pool=10, target=['Url'], join=['Url'], how='left', name=''):
         
         self.cpt = 0
@@ -182,30 +157,17 @@ class DataColector:
         return df
      
 
+
+
+
     def get_driver(self,):
-        """
-        Get a headless Chrome driver.
-
-        Args:
-            self (object): The object instance.
-
-        Returns:
-            ChromeDriver: The headless Chrome driver.
-        NB: i dont use these option for the moment
-        """
-        
         pro = []
         
         driver = getattr(self.threadLocal, 'driver', None)
         if driver is None:
             options = webdriver.FirefoxOptions()
             options.add_argument("--lang=fr")
-            #options.add_experimental_option('prefs', {'intl.accept_languages': 'fr'})
-            #options.add_argument('--headless')
-            #options.add_argument('-no-sandbox')
-            #options.add_argument('--disable-gpu')
-            #options.add_argument('-disablr-dev-shm-usage')
-            
+
             
             #Si tous les proxy sont utilisés, on en prend un aléatoirement pour l'utiliser ou on utilise l'adresse IP de la machine de l'utilisateur
             if self.used_proxy == len(pro) and self.used_proxy > 0:
@@ -251,6 +213,9 @@ class DataColector:
             setattr(self.threadLocal, 'driver', driver)
              
         return driver
+
+
+
 
     def get_babbarTech_scores(self,url, df, list_len, pool):
         API_KEY = "lrU6gM7ev17v45DTS45dqznlEVvoapsNIotq5aQMeusGOtemdrWlqcpkIIMv"
@@ -322,8 +287,11 @@ class DataColector:
                         df.append({'Url' : url, 'HTTP code BABBAR':http_code, 'TTFB (en ms) BABBAR' : ttfb, 'Page Value BABBAR' : page_value , 'Page Trust BABBAR' : page_trust ,
                         'Semantic Value BABBAR' : semantic_value, 'Backlinks BABBAR' : backlinks, 'Backlinks host BABBAR' : host_backlinks, 'Host Outlinks BABBAR' : host_outlinks, 'Outlinks BABBAR' : outlinks})
                                 
-        
         now_thread = time.time()
+
+
+
+
 
     def get_pageSpeed_scores_API(self,url, df, list_len, pool):
 
@@ -410,6 +378,9 @@ class DataColector:
                 })
 
         now_thread = time.time()
+
+
+
 
     def get_pageSpeed_mobile_scores_API(self,url, df, list_len, pool):
 
@@ -498,13 +469,12 @@ class DataColector:
         now_thread = time.time()
 
 
+
+
+
     def get_1fr_scores(self,url, df, list_len, pool):
-        
-         
         self.cpt += 1
-
         start_thread = time.time()
-
         UNFR = True
 
         #On place le Driver sur l'Url
@@ -530,8 +500,7 @@ class DataColector:
                 login_button_ahref.submit() 
                 
                 time.sleep(random.uniform(0.5,1.25))"""
-                
-
+            
             except Exception:
                 print('Déjà connecté')  
             while True:
@@ -589,7 +558,10 @@ class DataColector:
                 df.append({'Url' : url, 'Score_1fr' : np.nan})
          
         #app.update_progressBar('1.Fr', list_len, floor(now_thread - start_thread)/pool)
-    #
+    
+
+
+
     def get_yourTextGuru_scores(self,keyword, df, list_len, pool):
         start_thread = time.time()
 
@@ -763,7 +735,10 @@ class DataColector:
 
         now_thread = time.time() 
         #app.update_progressBar('YourTextGuru', list_len, floor(now_thread - start_thread)/pool)
-        
+
+
+
+
     def get_screaming_frog_info(self,res):
         random_file_name = str('test_file')
 
@@ -808,6 +783,8 @@ class DataColector:
         print("Crawler terminé.")
         return df
 
+
+
     def get_Data_as_csv(self,keyword,nb_sim_keywords,nb_links,nb_top_1):
         print('working on : ' +keyword)
         keywords_list = self.get_similar_keywords(keyword , nb_sim_keywords)
@@ -842,9 +819,9 @@ class DataColector:
         print('step 10 done')
 
 
+
+
     def get_all_URL_data(self,df):
-        
-        
         t1 = Thread ( target = self.multiprocessing_function, args = (0, df ,self.get_babbarTech_scores,  1, ))
         t2 = Thread ( target = self.multiprocessing_function, args = (1, df ,self.get_pageSpeed_scores_API,  20, ))#PageSpeed
         t3 = Thread ( target = self.multiprocessing_function, args = (2, df ,self.get_pageSpeed_mobile_scores_API,  20, ))#PageSpeed
@@ -893,11 +870,6 @@ class DataColector:
         t4.start()
         t3.start()
         t5.start()
-
-        
-        
-        
-
         t3.join()
         print("20% done")
         t2.start() 
@@ -918,15 +890,11 @@ class DataColector:
                     df = pd.merge(df,self.list_dfs[i] , how='left', left_on = list(res_df.columns), right_on = list(res_df.columns)) 
 
         df = self.get_screaming_frog_info(df)
-        
-        
         sm = SemantiqueValues()
         df = sm.getSemantiqueValues(df)
         path = './dataSETs/'+keyword+'.csv'
         df.to_csv(path)
          
- 
-      
         print('step 10 done') 
         
         

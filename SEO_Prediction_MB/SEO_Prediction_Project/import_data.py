@@ -13,6 +13,21 @@ from SEO_Prediction_App.models import Data, Keyword
 
 data_sets_directory = './DataSets'
 
+
+
+def process_column(value):
+   
+    if isinstance(value, tuple) and len(value) > 0:
+        value = value[0]
+
+    if value:
+        value = float(value)
+    else:
+        value = 0
+
+    return value
+
+
 # Importez d'abord les mots-clés
 def import_keywords_from_csv(directory_path):
     for filename in os.listdir(directory_path):
@@ -38,7 +53,6 @@ def import_data_from_csv_files(directory_path):
                 
                 keyword_name = os.path.splitext(filename)[0]
                 Thekeyword = Keyword.objects.get(Keyword=keyword_name)
-
                 dseo_yourtext_guru_value = row.get('DSEO yourtext_guru', '')
                 Score_1fr_value = row.get('Score_1fr', ''),
                 h1_2_score_value = row.get('H1-2 score', ''),
@@ -53,156 +67,65 @@ def import_data_from_csv_files(directory_path):
                 mobile_time_to_interactive_lab_value = row.get('Mobile Time to Interactive Lab', ''),
                 mobile_total_blocking_time_lab_value = row.get('Mobile Total Blocking Time Lab', ''),
                 soseo_yourtext_guru_value = row.get('SOSEO yourtext_guru', ''),
-
-                if isinstance(Score_1fr_value, tuple) and len(Score_1fr_value) > 0:
-                   Score_1fr_value = Score_1fr_value[0]
-                if Score_1fr_value:
-                   Score_1fr_value = float(Score_1fr_value)
-                else:
-                    Score_1fr_value = None
-
-                if isinstance(dseo_yourtext_guru_value, tuple) and len(dseo_yourtext_guru_value) > 0:
-                   dseo_yourtext_guru_value = dseo_yourtext_guru_value[0]
-                if dseo_yourtext_guru_value:
-                   dseo_yourtext_guru_value = float(dseo_yourtext_guru_value)
-                else:
-                    dseo_yourtext_guru_value = None
-
-                # H1-2 score   
-                if isinstance(h1_2_score_value, tuple) and len(h1_2_score_value) > 0:
-                   h1_2_score_value = h1_2_score_value[0]
-                if h1_2_score_value:
-                   h1_2_score_value = float(h1_2_score_value)
-                else:
-                    h1_2_score_value = None   
-               
-                # Mobile_cumulative_layout_shift_lab
-                if isinstance(mobile_cumulative_layout_shift_lab_value, tuple) and len(mobile_cumulative_layout_shift_lab_value) > 0:
-                    mobile_cumulative_layout_shift_lab_value = mobile_cumulative_layout_shift_lab_value[0]
-                if mobile_cumulative_layout_shift_lab_value:
-                    mobile_cumulative_layout_shift_lab_value = float(mobile_cumulative_layout_shift_lab_value)
-                else:
-                    mobile_cumulative_layout_shift_lab_value = None   
-
-                # Mobile_cumulative_layout_shift_terrain
-                if isinstance(mobile_cumulative_layout_shift_terrain_value, tuple) and len(mobile_cumulative_layout_shift_terrain_value) > 0:
-                    mobile_cumulative_layout_shift_terrain_value = mobile_cumulative_layout_shift_terrain_value[0]
-                if mobile_cumulative_layout_shift_terrain_value:
-                    mobile_cumulative_layout_shift_terrain_value = float(mobile_cumulative_layout_shift_terrain_value)
-                else:
-                    mobile_cumulative_layout_shift_terrain_value = None  
-            
-
-                # Mobile_first_contentful_paint_lab
-                if isinstance(mobile_first_contentful_paint_lab_value, tuple) and len(mobile_first_contentful_paint_lab_value) > 0:
-                    mobile_first_contentful_paint_lab_value = mobile_first_contentful_paint_lab_value[0]
-                if mobile_first_contentful_paint_lab_value:
-                    mobile_first_contentful_paint_lab_value = float(mobile_first_contentful_paint_lab_value)
-                else:
-                    mobile_first_contentful_paint_lab_value = None  
-
-                   # Mobile_first_contentful_paint_terrain 
-                if isinstance(mobile_first_contentful_paint_terrain_value, tuple) and len(mobile_first_contentful_paint_terrain_value) > 0:
-                    mobile_first_contentful_paint_terrain_value = mobile_first_contentful_paint_terrain_value[0]
-                if mobile_first_contentful_paint_terrain_value:
-                    mobile_first_contentful_paint_terrain_value = float(mobile_first_contentful_paint_terrain_value)
-                else:
-                    mobile_first_contentful_paint_terrain_value = None  
-
-                  # Mobile_first_input_delay_terain
-                if isinstance(mobile_first_input_delay_terain_value, tuple) and len(mobile_first_input_delay_terain_value) > 0:
-                   mobile_first_input_delay_terain_value = mobile_first_input_delay_terain_value[0]
-                if mobile_first_input_delay_terain_value:
-                   mobile_first_input_delay_terain_value = float(mobile_first_input_delay_terain_value)
-                else:
-                   mobile_first_input_delay_terain_value = None  
-
-                # mobile_largest_contentful_paint_lab_value
-                if isinstance(mobile_largest_contentful_paint_lab_value, tuple) and len(mobile_largest_contentful_paint_lab_value) > 0:
-                    mobile_largest_contentful_paint_lab_value = mobile_largest_contentful_paint_lab_value[0]
-                if mobile_largest_contentful_paint_lab_value:
-                    mobile_largest_contentful_paint_lab_value = float(mobile_largest_contentful_paint_lab_value)
-                else:
-                    mobile_largest_contentful_paint_lab_value= None 
-
-                # Mobile_largest_contentful_paint_terrain
-                if isinstance(mobile_largest_contentful_paint_terrain_value, tuple) and len(mobile_largest_contentful_paint_terrain_value) > 0:
-                    mobile_largest_contentful_paint_terrain_value = mobile_largest_contentful_paint_terrain_value[0]
-                if mobile_largest_contentful_paint_terrain_value:
-                    mobile_largest_contentful_paint_terrain_value = float(mobile_largest_contentful_paint_terrain_value)
-                else:
-                   mobile_largest_contentful_paint_terrain_value= None 
-
-
-                  # Mobile_speed_index_lab
-                if isinstance(mobile_speed_index_lab_value, tuple) and len(mobile_speed_index_lab_value) > 0:
-                   mobile_speed_index_lab_value = mobile_speed_index_lab_value[0]
-                if mobile_speed_index_lab_value:
-                   mobile_speed_index_lab_value = float(mobile_speed_index_lab_value)
-                else:
-                   mobile_speed_index_lab_value= None  
-
-                # Mobile_time_to_interactive_lab
-                if isinstance(mobile_time_to_interactive_lab_value, tuple) and len(mobile_time_to_interactive_lab_value) > 0:
-                   mobile_time_to_interactive_lab_value = mobile_time_to_interactive_lab_value[0]
-                if mobile_time_to_interactive_lab_value:
-                   mobile_time_to_interactive_lab_value = float(mobile_time_to_interactive_lab_value)
-                else:
-                   mobile_time_to_interactive_lab_value= None                 
-
-                # Mobile_total_blocking_time_lab
-                if isinstance(mobile_total_blocking_time_lab_value, tuple) and len(mobile_total_blocking_time_lab_value) > 0:
-                   mobile_total_blocking_time_lab_value = mobile_total_blocking_time_lab_value[0]
-                if mobile_total_blocking_time_lab_value:
-                   mobile_total_blocking_time_lab_value = float(mobile_total_blocking_time_lab_value)
-                else:
-                   mobile_total_blocking_time_lab_value= None 
-
-                # SOSEO_yourtext_guru
-                if isinstance(soseo_yourtext_guru_value, tuple) and len(soseo_yourtext_guru_value) > 0:
-                   soseo_yourtext_guru_value = soseo_yourtext_guru_value[0]
-                if soseo_yourtext_guru_value:
-                   soseo_yourtext_guru_value = float(soseo_yourtext_guru_value)
-                else:
-                   soseo_yourtext_guru_value= None
+                desktop_first_contentful_paint_terrain_value = row.get('Desktop First Contentful Paint Terrain', ''),
+                desktop_first_input_delay_terain_value=row.get('Desktop First Input Delay Terain', ''),
+                desktop_largest_contentful_paint_terrain_value=row.get('Desktop Largest Contentful Paint Terrain', ''),
+                desktop_cumulative_layout_shift_terrain_vlaue= row.get('Desktop Cumulative Layout Shift Terrain', ''),
+                desktop_first_contentful_paint_lab_value= row.get('Desktop First Contentful Paint Lab', ''),
+                desktop_speed_index_lab_value= row.get('Desktop Speed Index Lab', ''),
+                desktop_largest_contentful_paint_lab_value = row.get('Desktop Largest Contentful Paint Lab', ''),
+                desktop_time_to_interactive_lab_value = row.get('Desktop Time to Interactive Lab', ''),
+                desktop_cumulative_layout_shift_lab_value = row.get('Desktop Cumulative Layout Shift Lab', ''),
+                desktop_total_blocking_time_lab_value = row.get('Desktop Total Blocking Time Lab', ''),
+                Http_code_babbar_value =row.get('HTTP code BABBAR', ''),
+                Ttfb_babbar_value=row.get('TTFB (en ms) BABBAR', ''),
+                Page_value_babbar_value=row.get('Page Value BABBAR', ''),
+                Page_trust_babbar_value=row.get('Page Trust BABBAR', ''),
+                Semantic_value_babbar_value=row.get('Semantic Value BABBAR', ''),
+                Backlinks_babbar_value=row.get('Backlinks BABBAR', ''),       
+                Backlinks_host_babbar_value=row.get('Backlinks host BABBAR', ''),
+                Host_outlinks_babbar_value=row.get('Host Outlinks BABBAR', ''),
+                Outlinks_babbar_value=row.get('Outlinks BABBAR', ''),            
+                Type_1_value= row.get('Type 1', ''), 
                 
                 
                 data = Data(
                     Thekeyword=row.get('Keyword', ''),
                     Url=row.get('Url', ''),
-                    Top10=row.get('Top10', ''),
+                    Top10 = row.get('Top10', ''),
                     Position=row.get('Position', ''),
-                    Http_code_babbar=row.get('HTTP code BABBAR', ''),
-                    Ttfb_babbar=row.get('TTFB (en ms) BABBAR', ''),                   
-                    Page_value_babbar=row.get('Page Value BABBAR', ''),
-                    Page_trust_babbar=row.get('Page Trust BABBAR', ''),
-                    Semantic_value_babbar=row.get('Semantic Value BABBAR', ''),
-                    Backlinks_babbar=row.get('Backlinks BABBAR', ''),       
-                    Backlinks_host_babbar=row.get('Backlinks host BABBAR', ''),
-                    Host_outlinks_babbar=row.get('Host Outlinks BABBAR', ''),
-                    Outlinks_babbar=row.get('Outlinks BABBAR', ''),
-                    Desktop_first_contentful_paint_terrain=row.get('Desktop First Contentful Paint Terrain', ''),
-                    Desktop_first_input_delay_terain=row.get('Desktop First Input Delay Terain', ''),
-                    Desktop_largest_contentful_paint_terrain=row.get('Desktop Largest Contentful Paint Terrain', ''),
-                    Desktop_cumulative_layout_shift_terrain= row.get('Desktop Cumulative Layout Shift Terrain', ''),
-                    Desktop_first_contentful_paint_lab= row.get('Desktop First Contentful Paint Lab', ''),
-                    Desktop_speed_index_lab= row.get('Desktop Speed Index Lab', ''),
-                    Desktop_largest_contentful_paint_lab = row.get('Desktop Largest Contentful Paint Lab', ''),
-                    Desktop_time_to_interactive_lab = row.get('Desktop Time to Interactive Lab', ''),
-                    Desktop_cumulative_layout_shift_lab = row.get('Desktop Cumulative Layout Shift Lab', ''),
-                    Mobile_first_contentful_paint_terrain = mobile_first_contentful_paint_terrain_value,
-                    Mobile_first_input_delay_terain = mobile_first_input_delay_terain_value,
-                    Mobile_largest_contentful_paint_terrain = mobile_largest_contentful_paint_terrain_value,
-                    Mobile_cumulative_layout_shift_terrain = mobile_cumulative_layout_shift_terrain_value,
-                    Mobile_first_contentful_paint_lab = mobile_first_contentful_paint_lab_value,
-                    Mobile_speed_index_lab = mobile_speed_index_lab_value,
-                    Mobile_largest_contentful_paint_lab = mobile_largest_contentful_paint_lab_value,
-                    Mobile_time_to_interactive_lab = mobile_time_to_interactive_lab_value,
-                    Mobile_total_blocking_time_lab = mobile_total_blocking_time_lab_value,
-                    Mobile_cumulative_layout_shift_lab =  mobile_cumulative_layout_shift_lab_value,
-                    SOSEO_yourtext_guru = soseo_yourtext_guru_value,
-                    DSEO_yourtext_guru= dseo_yourtext_guru_value,
-                    Score_1fr = Score_1fr_value,
+                    Http_code_babbar= process_column(Http_code_babbar_value),
+                    Ttfb_babbar=process_column(Ttfb_babbar_value),                   
+                    Page_value_babbar=process_column(Page_value_babbar_value),
+                    Page_trust_babbar=process_column(Page_trust_babbar_value),
+                    Semantic_value_babbar=process_column(Semantic_value_babbar_value),
+                    Backlinks_babbar=process_column(Backlinks_babbar_value),       
+                    Backlinks_host_babbar=process_column(Backlinks_host_babbar_value),
+                    Host_outlinks_babbar=process_column(Host_outlinks_babbar_value),
+                    Outlinks_babbar= process_column(Outlinks_babbar_value),
+                    Desktop_first_contentful_paint_terrain=process_column(desktop_first_contentful_paint_terrain_value),
+                    Desktop_first_input_delay_terain=process_column(desktop_first_input_delay_terain_value),
+                    Desktop_largest_contentful_paint_terrain=process_column(desktop_largest_contentful_paint_terrain_value),
+                    Desktop_cumulative_layout_shift_terrain= process_column(desktop_cumulative_layout_shift_terrain_vlaue),
+                    Desktop_first_contentful_paint_lab= process_column(desktop_first_contentful_paint_lab_value),
+                    Desktop_speed_index_lab= process_column(desktop_speed_index_lab_value),
+                    Desktop_total_blocking_time_lab = process_column(desktop_total_blocking_time_lab_value),
+                    Desktop_largest_contentful_paint_lab = process_column(desktop_largest_contentful_paint_lab_value),
+                    Desktop_time_to_interactive_lab = process_column(desktop_time_to_interactive_lab_value),
+                    Desktop_cumulative_layout_shift_lab = process_column(desktop_cumulative_layout_shift_lab_value),
+                    Mobile_first_contentful_paint_terrain = process_column(mobile_first_contentful_paint_terrain_value),
+                    Mobile_first_input_delay_terain = process_column(mobile_first_input_delay_terain_value),
+                    Mobile_largest_contentful_paint_terrain = process_column(mobile_largest_contentful_paint_terrain_value),
+                    Mobile_cumulative_layout_shift_terrain = process_column(mobile_cumulative_layout_shift_terrain_value),
+                    Mobile_first_contentful_paint_lab = process_column(mobile_first_contentful_paint_lab_value),
+                    Mobile_speed_index_lab = process_column(mobile_speed_index_lab_value),
+                    Mobile_largest_contentful_paint_lab = process_column(mobile_largest_contentful_paint_lab_value),
+                    Mobile_time_to_interactive_lab = process_column(mobile_time_to_interactive_lab_value),
+                    Mobile_total_blocking_time_lab = process_column(mobile_total_blocking_time_lab_value),
+                    Mobile_cumulative_layout_shift_lab =  process_column(mobile_cumulative_layout_shift_lab_value),
+                    SOSEO_yourtext_guru = process_column(soseo_yourtext_guru_value),
+                    DSEO_yourtext_guru= process_column(dseo_yourtext_guru_value),
+                    Score_1fr = process_column(Score_1fr_value),
                     Content_type = row.get('Content Type', ''),
                     Status_code = row.get('Status Code', ''),
                     Status = row.get('Status', ''),
@@ -278,19 +201,19 @@ def import_data_from_csv_files(directory_path):
                     Warnings = row.get('Warnings', ''),
                     Total_Types = row.get('Total Types', ''),
                     Unique_Types = row.get('Unique Types', ''),
-                    Type_1 = row.get('Type-1', ''),
+                    Type_1 = process_column(Type_1_value),
                     Indexability_y = row.get('Indexability_y', ''),
                     Indexability_Status_y = row.get('Indexability Status_y', ''),
                     Title1_score = row.get('Title 1 score', ''),
                     Meta_Description1_score = row.get('Meta Description 1 score', ''),
                     Meta_Keywords1_score = row.get('Meta Keywords 1 score', ''),
                     H1_1_score = row.get('H1-1 score', ''),
-                    H1_2_score = h1_2_score_value,
+                    H1_2_score = process_column(h1_2_score_value),
                     H2_1_score = row.get('H2-1 score', ''),
                     H2_2_score = row.get('H2-2 score', ''),
                     Meta_Robots_1_score = row.get('Meta Robots 1 score', ''),
                     Url_Score = row.get('Url score', ''),     
-                    Date_added=datetime.now()            
+                    Date_added=datetime.now()
 
                  )
                   
@@ -325,12 +248,12 @@ if __name__ == "__main__":
      except KeyboardInterrupt:
         observer.stop()
      observer.join()
-"""
+
 # Delete all objects in the Data and Keyword models
-Data.objects.all().delete()
+"""Data.objects.all().delete()
 Keyword.objects.all().delete()
-"""
-print("All data and keywords have been deleted.")
+
+print("All data and keywords have been deleted.")"""
   
 data_count = Data.objects.count()
 keyword_count = Keyword.objects.count()

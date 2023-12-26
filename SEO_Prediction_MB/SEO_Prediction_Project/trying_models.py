@@ -4,152 +4,158 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'SEO_Prediction_Project.settings')
 django.setup() 
 
-from Predictive.data_colector import DataColector 
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
-import pandas as pd
-from selenium import webdriver
-from webdriver_manager.firefox import GeckoDriverManager
-from fake_useragent import UserAgent
-import random
 from Predictive.train_Models import TrainModels
-from tabulate import tabulate
-import numpy as np
+from import_data_url import import_data_url_from_csv_files
+from Predictive.url_Predict import UrlPredect
+from Predictive.response_Builder import ResponseBuilder
+import pandas as pd
 
 
-
-
+# Initialisation de la classe TrainModels
 trainer = TrainModels()
-#Read data from Data Base
+
+# Read data from Data Base
 trainer.read_my_data()
-# Access the DataFrames created by the method
+
+# Accéder aux DataFrames créés par la méthode
 data_df = trainer.df
+
+# Suppression des colonnes inutiles
 data_df = trainer.data_to_drop(data_df)
 trainer.df = data_df
+
+# Prétraitement de la data
 trainer.preprocessing()
 
-# Step 5: Print or inspect the processed data
-print("Processed DataFrame:")
-print(trainer.df.head())
-print("\nTarget Variable (y):")
-print(trainer.y.head())
-print("\nFeatures (X):")
-print(trainer.X.head())
+# Afficher chaque colonne avec son type
 
-X = trainer.X
-y = trainer.y
-
-# Divisez les données
-X_train, X_test, y_train, y_test = trainer.split_data(X, y)
-print("Number of training data points:", X_train.shape[0])
-print("Number of test data points:", X_test.shape[0])
-print("Number of training target:", y_train.shape[0])
-print("Number of test data points:", y_test.shape[0])
-
-# Affichez les dimensions de vos données avant de commencer
-print("Dimensions de X_train:", X_train.shape)
-print("Dimensions de y_train:", y_train.shape)
-
-"""************************************************************************TESTING STACKING***************************************************************************************"""
-#testing Models
-stacking_model, accuracy = trainer.train_and_evaluate_stacking(X_train, y_train, X_test, y_test)
-
-print("Stacking's accuracy")
-print(accuracy)
+#Split data entre data d'entrainement et la data du test
+X_train, X_test, y_train, y_test = trainer.split_data(trainer.X, trainer.y)
 
 
-"""************************************************************************TESTING VOTING*****************************************************************************************"""
 
-Voting_accuracy = trainer.train_evaluate_voting(X_train, y_train, X_test, y_test, voting='hard')
-print("Voting's's accuracy")
-print(accuracy)
+"*************************Testing models**********************************"
 
+#test des modèles de bases
+model , auc , acc , importance_score= trainer.train_model(trainer.train_RandomForestClassifier)
+print("The AUC",auc)
+print("The ACC",acc)
+print("The importance scores", importance_score)
 
-"""model1 = trainer.train_XGBClassifier(X_train, y_train)
-model2 =trainer.train_ExtraTreesClassifier(X_train, y_train)
-model3 = trainer.train_RandomForestClassifier(X_train, y_train)
-model4 = trainer.train_GradientBoostingClassifier(X_train, y_train)
-model5 = trainer.train_AdaBoostClassifier(X_train, y_train)
-
-
-# Faites des prédictions
-#y_pred = trained_model.predict(X_test)
-
-# Les prédictions
-predictions = pd.DataFrame({
-    'Model1': model1.predict(X_test),
-    'Model2': model2.predict(X_test),
-    'Model3': model3.predict(X_test),
-    'Model4': model4.predict(X_test),
-    'Model5': model5.predict(X_test),
-    'Actual': y_test 
-})
-
-X_stack = predictions[['Model1', 'Model2', 'Model3', 'Model4', 'Model5']]
-y_stack = predictions['Actual']
-
-X_train_stack, X_test_stack, y_train_stack, y_test_stack = trainer.split_data(X_stack, y_stack)
-stack_model = trainer.train_XGBClassifier(X_train, y_train)
-
-stack_model.fit(X_train_stack, y_train_stack)
-y_pred_stack = stack_model.predict(X_test_stack)
-
-accuracy = accuracy_score(y_test_stack, y_pred_stack)
-print("Accuracy:", accuracy)
-
-precision = precision_score(y_test_stack, y_pred_stack)
-print("Precision:", precision)
+#trained_model = trainer.train_models(trainer.df)
+#Test modèle ensembliste
+#trainer.Final_get_importance()
 
 
-recall = recall_score(y_test_stack, y_pred_stack)
-print("Recall:", recall)
 
 
-f1 = f1_score(y_test_stack, y_pred_stack)
-print("F1 Score:", f1)
 
 
-conf_matrix = confusion_matrix(y_test_stack, y_pred_stack)
-print("Confusion Matrix:\n", conf_matrix)"""
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Initialisation des classes TrainModels, UrlPredect, ResponseBuilder
+trainer = TrainModels()
+url_predictor = UrlPredect()
+response_builder = ResponseBuilder()
+
+
+
+#Charger les données de la base de données
+df = url_predictor.get_data_from_database()
+
+if not df.empty:
+    num_columns = df.shape[1]
+    print("Nombre de colonnes dans data_dr :", num_columns)
+
+    # Définir l'URL spécifique et le mot-clé
+    specific_url = 'https://www.govoyages.com/compagnie-aerienne/2C/sncf/'
+    keyword = 'voyages sncf'
+    url_predictor.url = specific_url
+    url_predictor.keyword = keyword
+
+    print("the url", url_predictor.url)
+    print("the key word", keyword)
+
+    # Obtenir des données pour l'URL et le mot-clé spécifiés
+    url_predictor.url_data = url_predictor.get_data_for_url(specific_url, keyword, df, response_builder)
+    if isinstance(url_predictor.url_data, pd.DataFrame) and not url_predictor.url_data.empty:
+       print("Message : df_key_url.head existe.")
+       print()
+    else:
+       print("Message : df_key_url.head n'existe pas.")
+    #print("data url ::",url_predictor.url_data)
+       csv_filename = './Url_data/url_data_output.csv'
+       url_predictor.url_data.to_csv(csv_filename, index=False)
+       print(f"Data saved to {csv_filename}")
+
+       data_sets = "./Url_data"
+       import_data_url_from_csv_files(data_sets)
+    
+else:
+    print("Le DataFrame est vide. Veuillez vérifier les données chargées.")
+print("this is : ******URL_data*******",url_predictor.url_data)
+
+# Exclure et convertir les colonnes 
+colonnes_exclues = ['Thekeyword','Url']
+df = df.drop(columns=colonnes_exclues, errors='ignore')
+trainer.df = df
+num_columns = trainer.df.shape[1]
+print("Nombre de colonnes dans data_dr :", num_columns)
+
+#Prétraitement de la data test
+data= url_predictor.exclude_and_convert_columns(trainer.df)
+num_columns = data.shape[1]
+print("Nombre de colonnes dans data_dr :", num_columns)
+trainer.df = data
+int_columns = trainer.df.select_dtypes(include='int').columns
+print("int columns:", int_columns)
 """
-# Affichez les dimensions de vos données de test après les prédictions
-print("Dimensions de X_test après les prédictions:", X_test.shape)
-print("Dimensions de y_pred:", y_pred.shape)
-
-
-accuracy = accuracy_score(y_test, y_pred)
-print("Accuracy:", accuracy)
-
-
-precision = precision_score(y_test, y_pred)
-print("Precision:", precision)
-
-
-recall = recall_score(y_test, y_pred)
-print("Recall:", recall)
-
-
-f1 = f1_score(y_test, y_pred)
-print("F1 Score:", f1)
-
-
-conf_matrix = confusion_matrix(y_test, y_pred)
-print("Confusion Matrix:\n", conf_matrix)"""
-
 """
-# Supposons que X_train est votre DataFrame
-columns_with_nan = X_train.columns[X_train.isnull().any()].tolist()
+#Entrainement de données
+trainer.preprocessing()
+X_train, X_test, y_train, y_test = trainer.split_data(trainer.X, trainer.y)
+trained_model= trainer.train_RandomForestClassifier(X_train, y_train)
+auc, acc = trainer.eval_model(trained_model,X_test, y_test)
+print(auc, acc)
 
-print("Colonnes avec des valeurs NaN :", columns_with_nan)
+response_builder.trainedModels= trained_model
+response_builder.df = trainer.df 
+response_builder.trainedModels.y = y_train
+data_test = url_predictor.url_data
+data_test=url_predictor.exclude_and_convert_columns(data_test)
 
-# Supposons que X_train est votre DataFrame
-pd.set_option('display.max_rows', None)  # Afficher toutes les lignes
-pd.set_option('display.max_columns', None)  # Afficher toutes les colonnes
+# Assurez-vous que ma donnée test a les mêmes colonnes que trained_model.feature_names_
+data_test = data_test[X_train.columns].reset_index(drop=True)
+print("Colonnes de la donnée de test en dehors de la fonction try_for_columns:", data_test.columns)
+url_predictor.url_data = data_test    
 
-nan_count_per_column = X_train.isnull().sum()
-
-print("Nombre de NaN par colonne :\n", nan_count_per_column)
-
-# Remettre les options d'affichage par défaut si nécessaire
-pd.reset_option('display.max_rows')
-pd.reset_option('display.max_columns')"""
+# Appeler la fonction try_for_columns avec le modèle entraîné pour prédir pour la donnée test 
+result = url_predictor.try_for_columns(trained_model, response_builder)
+print(result)

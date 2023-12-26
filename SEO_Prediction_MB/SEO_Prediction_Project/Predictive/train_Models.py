@@ -1,26 +1,25 @@
 import pandas as pd
 import numpy as np
 from sklearn.metrics import f1_score, precision_score
-
- 
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_auc_score
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import roc_auc_score, accuracy_score, confusion_matrix
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.ensemble import VotingClassifier
-from sklearn import metrics
-# check version number
+from sklearn.model_selection import GridSearchCV
 from imblearn.over_sampling import SMOTE 
 from sklearn.model_selection import KFold
 from SEO_Prediction_App.models import Data
-
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 class TrainModels:
+
+
+    #Initialisation de la classe TrainModel
     def __init__(self) :
         self.df = None
         self.X  = None
@@ -29,10 +28,13 @@ class TrainModels:
         self.y_over = None
         self.models = None
         self.path   = None
+        self.X_train_stack = None
 
 
+
+    #Lecture de la data depuis la BDD, en ignorant certaines colonnes, en faisant la conversion de certaines colonne de type object au type float et gestion des colonnes catégoriques
     def read_my_data(self):
-        colonnes_exclues = ['Position','Url_Score', 'HTTP_Version','Http_code_babbar','Thekeyword','Url','Content_type','Status_code','Status','Indexability_x','Indexability_status_x'
+        colonnes_exclues = ['id','Position','Url_Score', 'HTTP_Version','Http_code_babbar','Thekeyword','Url','Content_type','Status_code','Status','Indexability_x','Indexability_status_x'
                             ,'X_robots_tag1','Meta_Robots_1_score','Meta_Refresh_1','Canonical_link_element1','rel_next_1','rel_prev_1','HTTP_rel_next_1','HTTP_rel_prev_1','amphtml_link_element',
                               'Readability','Link_score','Closest_Similarity_Match','NoNear_Duplicates','Spelling_Errors','Grammar_Errors','Hash','Last_modified','Redirect_URL',
                               'Redirect_type','Cookies','URL_Encoded_Address','Crawl_Timestamp','Type_1','Indexability_y','Indexability_Status_y', 'Date_added']
@@ -44,18 +46,17 @@ class TrainModels:
         
         float_columns = [ 'Ttfb_babbar', 'Page_value_babbar', 'Page_trust_babbar', 'Semantic_value_babbar', 'Backlinks_babbar', 'Backlinks_host_babbar'
                          , 'Host_outlinks_babbar', 'Outlinks_babbar', 'Desktop_first_contentful_paint_terrain', 'Desktop_cumulative_layout_shift_terrain', 'Desktop_first_contentful_paint_lab',
-                         'Desktop_largest_contentful_paint_lab', 'SOSEO_yourtext_guru', 'DSEO_yourtext_guru', 'Word_count', 'Sentence_Count', 'Flesch_reading_ease_score', 'H1_2_length',
+                         'Desktop_largest_contentful_paint_lab','Desktop_speed_index_lab', 'SOSEO_yourtext_guru', 'DSEO_yourtext_guru', 'Word_count', 'Sentence_Count', 'Flesch_reading_ease_score', 'H1_2_length',
                          'Crawl_depth', 'Inlinks', 'Unique_inlinks', 'H2_2_score', 'H2_1_score', 'H1_1_score', 'Meta_Keywords1_score', 'Meta_Description1_score', 'Total_Types',
                          'Warnings', 'Unique_External_JS_Outlinks', 'Unique_External_Outlinks', 'External_Outlinks', 'Unique_Outlinks', 'of_Total', 'Desktop_cumulative_layout_shift_lab',
-                         'Desktop_largest_contentful_paint_terrain', 'Desktop_first_input_delay_terain', 'Outlinks', 'Title1_pixel_width', 'Title2', 'Title2_length', 'H1_1_length', 'H2_2_length',
+                         'Desktop_largest_contentful_paint_terrain', 'Desktop_first_input_delay_terain', 'Desktop_time_to_interactive_lab', 'Outlinks', 'Title1_pixel_width', 'Title2', 'Title2_length', 'H1_1_length', 'H2_2_length',
                          'Title2_pixel_width', 'Meta_description1', 'Meta_description1_Pixel_width', 'Meta_description2', 'Meta_description2_length', 'Meta_keywords1_length', 'H2_1_length',
-                           'Meta_description2_Pixel_width', 'Meta_Keywords1', 'H1_1','H1_2', 'H2_1', 'H2_2', 'Average_words_per_sentence', 'Unique_JS_inlinks', 'Unique_JS_Outlinks', 'Errors', 
-                           'Unique_Types', 'Meta_robots_1', 'Meta_robots_2', 'Meta_robots_3', 'Canonical_link_element2', 'Text_ratio', 'Response_time']
+                           'Meta_description2_Pixel_width', 'Meta_Keywords1', 'H1_1','H1_2', 'H2_1', 'H2_2', 'Average_words_per_sentence', 'Response_time', 'Unique_JS_inlinks', 'Unique_JS_Outlinks', 'Errors', 
+                           'Unique_Types', 'Meta_robots_1', 'Meta_robots_2', 'Meta_robots_3', 'Canonical_link_element2', 'Text_ratio']
         
         self.df[float_columns] = self.df[float_columns].apply(pd.to_numeric, errors='coerce')
         self.df[float_columns].fillna(0, inplace=True)
-        #certaines données sont reconnues comme type object alors qu'il sont float cela est du aux none
-
+        
         columns_to_convert = ['H1_2_score','H2_2_score','H2_2', 'Size_bytes','Word_count','Sentence_Count','Inlinks','Mobile_first_contentful_paint_terrain', 'Mobile_first_input_delay_terain',
                               'Mobile_largest_contentful_paint_terrain', 'H2_1_score', 'H1_1_score', 'Meta_Keywords1_score', 'Meta_Description1_score', 'Title1_score', 'Unique_Types',
                                'Total_Types', 'Errors', 'Unique_External_JS_Outlinks', 'Unique_External_Outlinks', 'External_Outlinks', 'Unique_JS_Outlinks', 'Warnings', 'of_Total', 'Unique_JS_inlinks',
@@ -69,20 +70,28 @@ class TrainModels:
         
         for column in columns_to_convert:
 
-            print("Converting column:", column)
+            #print("Converting column:", column)
             self.df[column] = pd.to_numeric(self.df[column], errors='coerce', downcast='float')
-            print(self.df.dtypes)
+            #print(self.df.dtypes)
             if pd.api.types.is_categorical_dtype(self.df[column]):
         # Gérer les colonnes catégoriques
              self.df[column] = pd.to_numeric(self.df[column], errors='coerce', downcast='float')
 
+
+
+    #Suppression de certaines colonnes inutiles
     def data_to_drop(self,df):
                
         df = df.loc[:, df.isin([' ','NULL' ]).mean(axis=0) < .6]
         return df
     
+
+
+    #Prétraitement des données, remplacement des nan par 0 ou la moyenne
     def preprocessing(self):
-        
+        for column in self.df.columns:
+            print(f"Colonne : {column}, Type : {self.df[column].dtype}")
+
         df = self.df
                
         print("Column names:", df.columns)
@@ -102,6 +111,7 @@ class TrainModels:
         df['H1_1'             ].replace( np.nan,0, inplace=True)
         df['H1_2'             ].replace( np.nan,0, inplace=True)
         df['H2_1'             ].replace( np.nan,0, inplace=True)
+        df['H2_2'             ].replace( np.nan,0, inplace=True)
         df['Meta_robots_1'             ].replace( np.nan,0, inplace=True)
         df['Meta_robots_2'             ].replace( np.nan,0, inplace=True)
         df['Meta_robots_3'             ].replace( np.nan,0, inplace=True)
@@ -119,41 +129,26 @@ class TrainModels:
         df['Unique_Outlinks'            ].replace( np.nan,0, inplace=True)
         df['External_Outlinks'          ].replace( np.nan,0, inplace=True)
         df['Unique_External_Outlinks'   ].replace( np.nan,0, inplace=True)
+
         numeric_columns = df.select_dtypes(include=[np.number]).columns
         df[numeric_columns] = df[numeric_columns].fillna(df[numeric_columns].mean())
+        df = df.apply(lambda col: col.fillna(col.mean()), axis=0)
 
-
+   
         self.df = df
         self.y = df['Top10'] 
         self.X = df.drop(['Top10'], axis=1).copy()
 
 
-    
+
+    #Diviser la data entre, données d'entrainement et données de test
     def split_data(self,X,y):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2,random_state=42)
         return X_train, X_test, y_train, y_test
-
-
-    def eval_model(self,model,X_test,y_test):
-        y_predect = model.predict(X_test)
-        auc = roc_auc_score(y_test, y_predect)
-        acc = accuracy_score(y_test, y_predect)
-        return auc , acc       
     
 
-    def get_importance(self,model):
-        list_col = list(self.X.columns)
-        importance = model.feature_importances_
-        # summarize feature importance
-        list_score = []
-        for i,v in enumerate(importance):
-            list_score.append(v)
-        df_scores = pd.DataFrame(data={'variable':list_col,'score':list_score})
-        df_sorted = df_scores.sort_values(by=['score'],ascending=False)
-        return df_sorted
-    
 
-    # 1
+    # 1 premier model 
     def train_XGBClassifier(self,X_train,y_train):
         parameters = {
             "learning_rate": np.arange(0.01, 0.1, 0.01),
@@ -162,19 +157,24 @@ class TrainModels:
             "min_child_weight": np.arange(1, 5, 1),
         }
         model = XGBClassifier( random_state=42)
-        #best_model = self.grid_search(X_train,y_train,parameters,model)
         model.fit(X_train, y_train)
+        print("*****************************************************************Train model 1 : XGBClassifier*****************************************************************")
         return model
     
 
-    # 2 
+
+
+    # 2 deuxiem modele
     def train_ExtraTreesClassifier(self,X_train,y_train):
         model = ExtraTreesClassifier( random_state=42)
         model.fit(X_train, y_train)
+        print("****************************************************************Train model 2 : ExtraTreesClassifier**********************************************************")
         return model
     
 
-    # 3
+
+
+    # 3 troisieme modele
     def train_RandomForestClassifier(self,X_train,y_train):
         # Create the parameter grid
         param_grid = {
@@ -184,80 +184,315 @@ class TrainModels:
             'min_samples_leaf': [1, 2, 5],
         }
         model = RandomForestClassifier( random_state=42)
-        #best_model = self.grid_search(X_train,y_train,param_grid,model)
         model.fit(X_train, y_train)
+        print("****************************************************************Train model 3 : RandomForestClassifier*******************************************************")
         return model
     
 
-     # 4
+
+
+     # 4 quatrième modele
     def train_GradientBoostingClassifier(self,X_train,y_train):
         model = GradientBoostingClassifier( random_state=42)
         model.fit(X_train, y_train)
+        print("*****************************************************************Train model 4 : GradientBoostingClassifier**************************************************")
         return model
     
 
-    # 5
+
+
+    # 5 cinquième modele
     def train_AdaBoostClassifier(self,X_train,y_train):
         model = AdaBoostClassifier( random_state=42)
         model.fit(X_train, y_train)
+        print("*****************************************************************Train model 5 : AdaBoostClassifier***********************************************************")
         return model
     
+
+
+        #Evaluation du modele en retournant l'accuracy et l'auc
+    def eval_model(self,model,X_test,y_test):
+        num_data_test = X_test.shape[0]
+        print("Nombre de données dans X_test :", num_data_test)
+    
+        y_predect = model.predict(X_test)
+        auc = roc_auc_score(y_test, y_predect)
+        acc = accuracy_score(y_test, y_predect)
+        conf_matrix = confusion_matrix(y_test, y_predect)
+    
+        # Affichage de la matrice de confusion avec seaborn
+        plt.figure(figsize=(8, 6))
+        sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', cbar=False,
+                xticklabels=['Non Top10', 'Top10'], yticklabels=['Non Top10', ' Top10'])
+        plt.xlabel('Prédictions')
+        plt.ylabel('Vraies valeurs')
+        plt.title('Matrice de confusion')
+        plt.show()
+        return auc , acc       
+
+
+
     #Methode ensembliste
+    #Stacking
     def train_and_evaluate_stacking(self, X_train, y_train, X_test, y_test):
      # Entraînez les modèles individuels
       model1 = self.train_XGBClassifier(X_train, y_train)
-      model2 = self.train_ExtraTreesClassifier(X_train, y_train)
-      model3 = self.train_RandomForestClassifier(X_train, y_train)
-      model4 = self.train_GradientBoostingClassifier(X_train, y_train)
-      model5 = self.train_AdaBoostClassifier(X_train, y_train)
+      auc , acc = self.eval_model(model1, X_test, y_test)
 
-     # Faites des prédictions avec les modèles individuels
+      print("The AUC model1 : XGBClassifier ",auc)
+      print("The ACC model1 : XGBClassifier",acc)
+
+      model2 = self.train_ExtraTreesClassifier(X_train, y_train)
+      auc , acc = self.eval_model(model2, X_test, y_test)
+
+      print("The AUC model2 : ExtraTreesClassifier",auc)
+      print("The ACC model2 : ExtraTreesClassifier",acc)
+
+      model3 = self.train_RandomForestClassifier(X_train, y_train)
+      uc , acc = self.eval_model(model3, X_test, y_test)
+
+      print("The AUC model3 : RandomForestClassifier",auc)
+      print("The ACC model3 : RandomForestClassifier",acc)
+
+      model4 = self.train_GradientBoostingClassifier(X_train, y_train)
+      auc , acc = self.eval_model(model4, X_test, y_test)
+
+      print("The AUC model4 : GradientBoostingClassifier",auc)
+      print("The ACC model4 : GradientBoostingClassifier",acc)
+
+      model5 = self.train_AdaBoostClassifier(X_train, y_train)
+      auc , acc = self.eval_model(model5, X_test, y_test)
+
+      print("The AUC model5 : AdaBoostClassifier",auc)
+      print("The ACC model6 : AdaBoostClassifier",acc)
+    
+    # Faites des prédictions de probabilité avec les modèles individuels
       predictions = pd.DataFrame({
-        'Model1': model1.predict(X_test),
-        'Model2': model2.predict(X_test),
-        'Model3': model3.predict(X_test),
-        'Model4': model4.predict(X_test),
-        'Model5': model5.predict(X_test),
+        'Model1': model1.predict_proba(X_test)[:, 1],
+        'Model2': model2.predict_proba(X_test)[:, 1],
+        'Model3': model3.predict_proba(X_test)[:, 1],
+        'Model4': model4.predict_proba(X_test)[:, 1],
+        'Model5': model5.predict_proba(X_test)[:, 1],
         'Actual': y_test
-       })
+      })
+      print("Shape of X_test:", X_test.shape)
+      print("Shape of predictions:", predictions.shape)
 
      # Créez les données d'entrée pour le modèle de stacking
-      X_stack = predictions[['Model1', 'Model2', 'Model3', 'Model4', 'Model5']]
+      X_stack = predictions[['Model1', 'Model2', 'Model3', 'Model4', 'Model5']].copy()
       y_stack = predictions['Actual']
 
-     # Divisez les données pour le modèle de stacking
-      X_train_stack, X_test_stack, y_train_stack, y_test_stack = self.split_data(X_stack, y_stack)
+      print("Shape of X_stack:", X_stack.shape)
+      print("Shape of y_stack:", y_stack.shape)
 
+      X_train_stack, X_test_stack, y_train_stack, y_test_stack = self.split_data(X_stack, y_stack)
      # Entraînez le modèle de stacking
       stack_model = self.train_XGBClassifier(X_train_stack, y_train_stack)
-
-     # Faites des prédictions avec le modèle de stacking
-      y_pred_stack = stack_model.predict(X_test_stack)
-      accuracy = accuracy_score(y_test_stack, y_pred_stack)
-      print("Accuracy:", accuracy)
-      return stack_model, accuracy
+      self.X_train_stack = X_train_stack
+      return stack_model,X_test_stack, y_test_stack, model1, model2, model3, model4, model5
     
 
 
-    def train_evaluate_voting(self, X_train, y_train, X_test, y_test, voting='hard'):
- 
-      models = [('XGB', XGBClassifier(random_state=42)),
-          ('ExtraTrees', ExtraTreesClassifier(random_state=42)),
-          ('RandomForest', RandomForestClassifier(random_state=42)),
-          ('GradientBoosting', GradientBoostingClassifier(random_state=42)),
-          ('AdaBoost', AdaBoostClassifier(random_state=42))]
+
+    def grid_search(self ,X, y,param_grid,fun):
+        # Create the grid search object
+        grid_search = GridSearchCV(
+            estimator=fun,
+            param_grid=param_grid,
+            cv=5, 
+            scoring="roc_auc"
+        )
+        # Fit the grid search object
+        grid_search.fit(X, y)
+
+        # Return the best model
+        return grid_search.best_estimator_
+    
+    #Pour améliorer la performance lorsqu'on a un désiquilibre entre les classes pour evité que le modèle soit biaisé vers la classe majoritaire
+    def oversampling_Smote(self):
+        X_train, X_test, y_train, y_test = self.split_data(self.X,self.y)
+        oversample = SMOTE(random_state=42, sampling_strategy='auto')
+        X_train, y_train = oversample.fit_resample( X_train, y_train )
+        print("Type de y_train avant conversion:", y_train.dtypes)
+        y_train = y_train.astype(int)  
+        print("Type de y_train après conversion:", y_train.dtypes)
+        return X_train, y_train, X_test, y_test
+
+    
+
+
+    #entrainement d'un modele
+    def train_model(self,fun, **kwargs):
         
-      # Création du VotingClassifier
-      voting_clf = VotingClassifier(estimators=models, voting=voting)
+        X_train, X_test, y_train, y_test = self.split_data(self.X,self.y)
 
-      # Entraînement du VotingClassifier sur les données d'entraînement
-      voting_clf.fit(X_train, y_train)
+        """num_data_train = X_train.shape[0]
+        print("Nombre de données dans X_train :", num_data_train)
+        num_data_test = X_test.shape[0]
+        print("Nombre de données dans X_test :", num_data_test)
+        num_label_data_train = y_train.shape[0]
+        print("Nombre des labes dans y_train :", num_label_data_train)
+        num_label_data_test = y_test.shape[0]
+        print("Nombre des labels dans y_test :", num_label_data_test)"""
+        
+        oversample = SMOTE(random_state=42, sampling_strategy='auto')
+        X_train, y_train = oversample.fit_resample( X_train, y_train )
 
-      # Prédiction sur les données de test
-      y_pred = voting_clf.predict(X_test)
+        model = fun(X_train,y_train)
+        auc , acc = self.eval_model(model,X_test,y_test)
+        importance_score = self.get_importance(model)
+        return model , auc , acc , importance_score
 
-      # Évaluation de la performance
-      accuracy = accuracy_score(y_test, y_pred)
-      print(f'Accuracy: {accuracy:.4f}')
-      return accuracy
 
+
+
+    #entrainement des modele de base (les 5 modeles, un par un)
+    def train_model_level1(self,model, X_train, y_train, X_test, y_test):
+        
+        auc , acc = self.eval_model(model,X_test,y_test)
+        importance_score = self.get_importance(model)
+        return model , auc , acc , importance_score
+
+
+
+    #Avoir un classement des colonnes de la dataframe par ordre croissant d'importance dans l'entrainement
+    def get_importance_level1(self, model):
+      # Obtenez les scores d'importance des fonctionnalités du modèle
+       importance_scores = model.feature_importances_
+
+        # Obtenez le nom des fonctionnalités à partir des colonnes de X_train_stack
+       feature_names = self.X_train_stack.columns
+
+    # Créez un DataFrame trié avec les noms de fonctionnalités et les scores d'importance
+       df_scores = pd.DataFrame(data={'variable': feature_names, 'score': importance_scores})
+       df_sorted = df_scores.sort_values(by='score', ascending=False)
+
+       first_row = df_sorted.iloc[0]
+       return df_sorted 
+        
+   
+
+
+   #Donne l' classement des modèles impliquer dans le ML ennsembliste par ordre croissant de leur importance
+    def Final_get_importance(self): 
+        X_train, y_train, X_test, y_test = self.oversampling_Smote()
+        stack_model, X_test_stack, y_test_stack, Model1, Model2, Model3, Model4, Model5= self.train_and_evaluate_stacking(X_train, y_train, X_test, y_test)
+        auc, acc= self.eval_model(stack_model, X_test_stack, y_test_stack)
+        print(auc)
+        print("The accuracy",acc)
+
+        df_importance = self.get_importance_level1(stack_model)
+        print(df_importance)
+        
+        # Triez le DataFrame par score en ordre décroissant
+        df_sorted = df_importance.sort_values(by='score', ascending=False)
+
+        # Obtenez le nom du modèle avec le score le plus élevé
+        best_model_name = df_sorted.iloc[0]['variable']
+
+        if best_model_name == 'Model1':
+          df_model = self.get_importance(Model1)
+        elif best_model_name == 'Model2':
+          df_model = self.get_importance(Model2)
+        elif best_model_name == 'Model3':
+          df_model = self.get_importance(Model3)
+        elif best_model_name == 'Model4':
+          df_model = self.get_importance(Model4)
+        elif best_model_name == 'Model5':
+          df_model = self.get_importance(Model5)
+        else:
+        # Gérez le cas où best_model_name n'est pas l'un des modèles connus
+         raise ValueError("Nom de modèle inconnu")
+        
+        print(df_model)
+        return stack_model
+
+
+
+    
+    def get_importance(self,model):
+        
+        list_col = list(self.X.columns)
+        importance = model.feature_importances_
+        # summarize feature importance
+        list_score = []
+        for i,v in enumerate(importance):
+            list_score.append(v)
+        print("Length of list_score:", len(list_score))
+        df_scores = pd.DataFrame(data={'variable':list_col,'score':list_score})
+        df_sorted = df_scores.sort_values(by=['score'],ascending=False)
+        return df_sorted
+    
+
+
+    # Fonction de validation croisée avec suréchantillionage pour entrainer et valider les modèles 
+    def train_model_kFold(self,fun):
+        
+        kf = KFold(n_splits=5)
+        X_train, X_valid, y_train, y_valid = self.split_data(self.X,self.y)
+        auc_init = 0
+        best_model = None
+        for  train_index, test_index  in  kf.split(X_train):
+            try:
+                 
+                #print('123')
+                X_train_Kfold, X_test_Kfold = X_train.iloc[train_index], X_train.iloc[test_index]
+                y_train_Kfold, y_test_Kfold = y_train.iloc[train_index], y_train.iloc[test_index]
+
+                oversample = SMOTE(random_state=42)
+                X_train_over, y_train_over = oversample.fit_resample( X_train_Kfold, y_train_Kfold )
+    
+                model = fun(X_train_over,y_train_over)
+                auc , acc = self.eval_model(model,X_test_Kfold,y_test_Kfold)
+                 
+                if auc_init<auc:
+                    best_model = model
+            except Exception as e:
+                print(e)
+                pass
+
+        auc , acc = self.eval_model(best_model,X_valid,y_valid)
+
+        importance_score = self.get_importance(best_model)
+        return best_model , auc , acc , importance_score
+    
+
+
+
+    def train_models(self, df):
+        try:
+            self.df = self.data_to_drop(df)
+            self.preprocessing()
+            models = {}
+
+            # Train XGBClassifier
+            model, auc, acc, importance_score = self.train_model_kFold(self.train_XGBClassifier)
+            models.update({'XGBClassifier': [model, auc, acc, importance_score]})
+            print("20%")
+
+            # Train ExtraTreesClassifier
+            model, auc, acc, importance_score = self.train_model_kFold(self.train_ExtraTreesClassifier)
+            models.update({'ExtraTreesClassifier': [model, auc, acc, importance_score]})
+            print("40%")
+
+            # Train RandomForestClassifier
+            model, auc, acc, importance_score = self.train_model_kFold(self.train_RandomForestClassifier)
+            models.update({'RandomForestClassifier': [model, auc, acc, importance_score]})
+            print("60%")
+
+            # Train GradientBoostingClassifier
+            model, auc, acc, importance_score = self.train_model_kFold(self.train_GradientBoostingClassifier)
+            models.update({'GradientBoostingClassifier': [model, auc, acc, importance_score]})
+            print("80%")
+
+            # Train AdaBoostClassifier
+            model, auc, acc, importance_score = self.train_model_kFold(self.train_AdaBoostClassifier)
+            models.update({'AdaBoostClassifier': [model, auc, acc, importance_score]})
+            print("100%")
+
+            self.models = models
+            return self  # Retourne l'instance de la classe
+        except Exception as e:
+           # Gère les erreurs ici, par exemple, imprime l'erreur
+           print(f"An error occurred during training: {str(e)}")
+           return None
