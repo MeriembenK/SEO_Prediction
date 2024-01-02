@@ -71,6 +71,7 @@ def create_data_url_object(row,data_sets_directory):
                 Type_1_value= row.get('Type 1', ''),   
                 Size_bytes_value = row.get('Size (bytes)', ''),
                 word_count_value = row.get('Word Count', ''),
+                H2_2_score_value=row.get('H2-2 score', '')
                 
             
                 data_url = Data_Url(
@@ -193,7 +194,7 @@ def create_data_url_object(row,data_sets_directory):
                     H1_1_score = row.get('H1-1 score', ''),
                     H1_2_score = process_column(h1_2_score_value),
                     H2_1_score = row.get('H2-1 score', ''),
-                    H2_2_score = row.get('H2-2 score', ''),
+                    H2_2_score = process_column(H2_2_score_value),
                     Meta_Robots_1_score = row.get('Meta Robots 1 score', ''),
                     Url_Score = row.get('Url score', ''),     
                     Date_added=datetime.now()            
@@ -219,8 +220,6 @@ def import_data_url_from_csv_files(directory_path):
             df = pd.read_csv(csv_path)
 
             for _, row in df.iterrows():
-                """keyword_name = os.path.splitext(filename)[0]
-                Thekeyword = Keyword.objects.get(Keyword=keyword_name)"""
 
                 data_url_object = create_data_url_object(row, directory_path)
                 data_url_objects.append(data_url_object)

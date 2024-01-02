@@ -120,7 +120,7 @@ class DataColector:
     def get_top(self,df,nb_top):
         
         try:
-            df['Top10'] = df['Position'].apply(lambda x: 1 if x <= nb_top else 0)
+            df['Top10'] = df['Position'].apply(lambda x: 0 if x <= nb_top else 1)
         except Exception:
             pass
         

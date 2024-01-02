@@ -11,7 +11,7 @@ dc = DataColector()
 
 
 # Appelez la méthode get_keywords
-keyword = "Voyage"  # Remplacez par votre propre mot-clé
+keyword = "Hôtel"  # Remplacez par votre propre mot-clé
 similar_keywords = dc.get_keywords(keyword)
 print("Mots-clés similaires pour", keyword, ":")
 print(similar_keywords)

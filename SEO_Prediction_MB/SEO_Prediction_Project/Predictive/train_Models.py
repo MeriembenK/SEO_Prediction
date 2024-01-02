@@ -1,10 +1,10 @@
 import pandas as pd
 import numpy as np
-from sklearn.metrics import f1_score, precision_score
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score, accuracy_score, confusion_matrix
+from sklearn.model_selection import cross_val_predict
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -29,7 +29,6 @@ class TrainModels:
         self.models = None
         self.path   = None
         self.X_train_stack = None
-
 
 
     #Lecture de la data depuis la BDD, en ignorant certaines colonnes, en faisant la conversion de certaines colonne de type object au type float et gestion des colonnes catégoriques
@@ -89,13 +88,13 @@ class TrainModels:
 
     #Prétraitement des données, remplacement des nan par 0 ou la moyenne
     def preprocessing(self):
-        for column in self.df.columns:
-            print(f"Colonne : {column}, Type : {self.df[column].dtype}")
+        """for column in self.df.columns:
+            print(f"Colonne : {column}, Type : {self.df[column].dtype}")"""
 
         df = self.df
                
-        print("Column names:", df.columns)
-        print("DataFrame shape:", df.shape)
+        """print("Column names:", df.columns)
+        print("DataFrame shape:", df.shape)"""
         print("Top10 column:", df['Top10'])
 
 
@@ -129,9 +128,13 @@ class TrainModels:
         df['Unique_Outlinks'            ].replace( np.nan,0, inplace=True)
         df['External_Outlinks'          ].replace( np.nan,0, inplace=True)
         df['Unique_External_Outlinks'   ].replace( np.nan,0, inplace=True)
+        df['SOSEO_yourtext_guru'   ].replace( np.nan,0, inplace=True)
+        df['DSEO_yourtext_guru'   ].replace( np.nan,0, inplace=True)
+        df['Score_1fr'   ].replace( np.nan,0, inplace=True)
 
         numeric_columns = df.select_dtypes(include=[np.number]).columns
         df[numeric_columns] = df[numeric_columns].fillna(df[numeric_columns].mean())
+        #df["SOSEO_yourtext_guru"]= df["SOSEO_yourtext_guru"].fillna(df["SOSEO_yourtext_guru"].mean())
         df = df.apply(lambda col: col.fillna(col.mean()), axis=0)
 
    
@@ -223,7 +226,7 @@ class TrainModels:
         # Affichage de la matrice de confusion avec seaborn
         plt.figure(figsize=(8, 6))
         sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', cbar=False,
-                xticklabels=['Non Top10', 'Top10'], yticklabels=['Non Top10', ' Top10'])
+                xticklabels=['Top10', 'Non Top10'], yticklabels=['Top10', ' Non Top10'])
         plt.xlabel('Prédictions')
         plt.ylabel('Vraies valeurs')
         plt.title('Matrice de confusion')
@@ -234,7 +237,7 @@ class TrainModels:
 
     #Methode ensembliste
     #Stacking
-    def train_and_evaluate_stacking(self, X_train, y_train, X_test, y_test):
+    def train_and_evaluate_stacking(self, X_train, y_train, X_test, y_test,  n_folds=5):
      # Entraînez les modèles individuels
       model1 = self.train_XGBClassifier(X_train, y_train)
       auc , acc = self.eval_model(model1, X_test, y_test)
@@ -268,13 +271,13 @@ class TrainModels:
     
     # Faites des prédictions de probabilité avec les modèles individuels
       predictions = pd.DataFrame({
-        'Model1': model1.predict_proba(X_test)[:, 1],
-        'Model2': model2.predict_proba(X_test)[:, 1],
-        'Model3': model3.predict_proba(X_test)[:, 1],
-        'Model4': model4.predict_proba(X_test)[:, 1],
-        'Model5': model5.predict_proba(X_test)[:, 1],
-        'Actual': y_test
-      })
+            'Model1': cross_val_predict(model1, X_test, y_test, cv=n_folds, method='predict_proba')[:, 1],
+            'Model2': cross_val_predict(model2, X_test, y_test, cv=n_folds, method='predict_proba')[:, 1],
+            'Model3': cross_val_predict(model3, X_test, y_test, cv=n_folds, method='predict_proba')[:, 1],
+            'Model4': cross_val_predict(model4, X_test, y_test, cv=n_folds, method='predict_proba')[:, 1],
+            'Model5': cross_val_predict(model5, X_test, y_test, cv=n_folds, method='predict_proba')[:, 1],
+            'Actual': y_test
+        })
       print("Shape of X_test:", X_test.shape)
       print("Shape of predictions:", predictions.shape)
 
@@ -292,8 +295,8 @@ class TrainModels:
       return stack_model,X_test_stack, y_test_stack, model1, model2, model3, model4, model5
     
 
-
-
+     
+   
     def grid_search(self ,X, y,param_grid,fun):
         # Create the grid search object
         grid_search = GridSearchCV(
@@ -325,15 +328,6 @@ class TrainModels:
     def train_model(self,fun, **kwargs):
         
         X_train, X_test, y_train, y_test = self.split_data(self.X,self.y)
-
-        """num_data_train = X_train.shape[0]
-        print("Nombre de données dans X_train :", num_data_train)
-        num_data_test = X_test.shape[0]
-        print("Nombre de données dans X_test :", num_data_test)
-        num_label_data_train = y_train.shape[0]
-        print("Nombre des labes dans y_train :", num_label_data_train)
-        num_label_data_test = y_test.shape[0]
-        print("Nombre des labels dans y_test :", num_label_data_test)"""
         
         oversample = SMOTE(random_state=42, sampling_strategy='auto')
         X_train, y_train = oversample.fit_resample( X_train, y_train )
@@ -376,7 +370,7 @@ class TrainModels:
    #Donne l' classement des modèles impliquer dans le ML ennsembliste par ordre croissant de leur importance
     def Final_get_importance(self): 
         X_train, y_train, X_test, y_test = self.oversampling_Smote()
-        stack_model, X_test_stack, y_test_stack, Model1, Model2, Model3, Model4, Model5= self.train_and_evaluate_stacking(X_train, y_train, X_test, y_test)
+        stack_model, X_test_stack, y_test_stack, Model1, Model2, Model3, Model4, Model5= self.train_and_evaluate_stacking(X_train, y_train, X_test, y_test, n_folds=5)
         auc, acc= self.eval_model(stack_model, X_test_stack, y_test_stack)
         print(auc)
         print("The accuracy",acc)
@@ -423,6 +417,31 @@ class TrainModels:
         df_sorted = df_scores.sort_values(by=['score'],ascending=False)
         return df_sorted
     
+    def display_feature_importance(self, model_name):
+        if self.models is None or not isinstance(self.models, dict):
+            print("Models have not been trained.")
+            return
+
+        if model_name not in self.models:
+            print(f"Model {model_name} not found.")
+            return
+
+        model_info = self.models[model_name]
+        model = model_info[0]
+
+        if hasattr(model, 'feature_importances_'):
+            feature_names = self.X.columns
+            importance_scores = model.feature_importances_
+
+            feature_importance = pd.DataFrame(
+                {'Feature': feature_names, 'Importance': importance_scores}
+            ).sort_values(by='Importance', ascending=False)
+
+            print(f"Feature importance for {model_name}:")
+            print(feature_importance)
+
+        else:
+            print(f"Model {model_name} does not provide feature importance information.")
 
 
     # Fonction de validation croisée avec suréchantillionage pour entrainer et valider les modèles 

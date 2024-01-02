@@ -1,6 +1,6 @@
 from .SemantiqueValues import SemantiqueValues
 from .data_colector import DataColector 
-from SEO_Prediction_App.models import Data
+from SEO_Prediction_App.models import Data, Data_Url
 import pandas as pd
 
 
@@ -23,7 +23,12 @@ class UrlPredect:
         df = df.convert_dtypes()
         return df
     
-
+    def get_data_url_from_database(self):
+        
+        data_queryset = Data_Url.objects.values()
+        df = pd.DataFrame.from_records(data_queryset)
+        df = df.convert_dtypes()
+        return df
     
     #Exclusion et conversion de certaines colonnes
     @staticmethod
@@ -101,9 +106,11 @@ class UrlPredect:
         df_key_url = df_key[df_key['Url'] == url]
     
         if df_key_url.shape[0] > 0:
-            return df_key_url.head(1)
+            testing= True
+            return df_key_url.head(1), testing
         else:
-            return self.get_url_data(url,keyword,responseBuilder)
+            testing= False
+            return self.get_url_data(url,keyword,responseBuilder), testing
         
 
 
@@ -189,7 +196,6 @@ class UrlPredect:
                 'H1_1_score', 'H2_1_score', 'H2_2_score']]
         return my_url_data
     
-
 
     #Cas de prédiction = 0
     def check_if_class1(self,model):
