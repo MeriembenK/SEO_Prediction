@@ -11,10 +11,10 @@ from Predictive.response_Builder import ResponseBuilder
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from Predictive.data_colector import DataColector 
 
 
-
-# Initialisation de la classe TrainModels
+"""# Initialisation de la classe TrainModels
 trainer = TrainModels()
 
 # Read data from Data Base
@@ -24,9 +24,18 @@ trainer.read_my_data()
 trainer.df = trainer.data_to_drop(trainer.df)
 
 # Prétraitement de la data
-trainer.preprocessing()
+trainer.preprocessing()"""
 
-print(trainer.df.isnull().sum())
+
+"""dc = DataColector()
+links = dc.get_all_urls_for_site("https://www.hyffen.com/agence")
+print(links)
+print("Nombre de liens :", len(links))"""
+
+
+
+"**********************************************************************Analyse des données****************************************************************************************"
+"""print(trainer.df.isnull().sum())
 print(trainer.df.dtypes)
 
 
@@ -45,7 +54,7 @@ importance_scores = trainer.models['RandomForestClassifier'][3]['score']
 low_importance_features = trainer.df.columns[importance_scores < 0.01]
 print("Features with low importance:", low_importance_features)
 
-"""# Suppression des colonnes inutiles
+# Suppression des colonnes inutiles
 
 
 result = trainer.train_models(trainer.df)
@@ -63,40 +72,41 @@ trainer.display_feature_importance('RandomForestClassifier')"""
 
 
 
+"""*********************************************************Testing récupération url site****************************************************************************"""
+
+"""url_predictor = UrlPredect()
+df = url_predictor.get_data_from_database()
+dc = DataColector()
+
+
+# Utilisez la méthode get_all_site_urls à partir de l'instance
+start_url = "https://www.agence-naga.fr/expertise/webmarketing/referencement-naturel-seo-lyon/"
+keyword = "agence seo nantes referencement44fr"
+response_builder = ResponseBuilder()
+print(df.columns)
 
 
 
+all_site_urls = dc.get_all_site_urls(start_url, 3)
+print(all_site_urls)
+print("Nombre de liens :", len(all_site_urls))"""
 
 
+trainer = TrainModels()
+# Read data from Data Base
+trainer.read_my_data()
+result = trainer.df.loc[trainer.df['Thekeyword'] == 'agence seo']
 
+# Affichage du résultat
+print("reultat de hotel",result)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# Accéder aux DataFrames créés par la méthode
+"""trainer.df = trainer.data_to_drop(trainer.df)
+# Prétraitement de la data
+trainer.preprocessing()
 
 #Split data entre data d'entrainement et la data du test
-""""X_train, X_test, y_train, y_test = trainer.split_data(trainer.X, trainer.y)
+X_train, X_test, y_train, y_test = trainer.split_data(trainer.X, trainer.y)
 
 columns_with_nan = trainer.df.columns[trainer.df.isnull().any()].tolist()
 
@@ -109,8 +119,6 @@ nan_info = pd.DataFrame({
 
 print("Informations sur les colonnes avec des valeurs NaN :\n", nan_info)
 
-# Split data between training and test sets
-X_train, X_test, y_train, y_test = trainer.split_data(trainer.X, trainer.y)
 
 # Display the number of elements in each set
 print("Number of elements in X_train:", X_train.shape[0])
@@ -118,25 +126,24 @@ print("Number of elements in y_train:", y_train.shape[0])
 print("Number of elements in X_test:", X_test.shape[0])
 print("Number of elements in y_test:", y_test.shape[0])
 """
-
 "*************************Testing models**********************************"
 """stack_model, X_test_stack, y_test_stack, Model1, Model2, Model3, Model4, Model5= trainer.train_and_evaluate_stacking(X_train, y_train, X_test, y_test, n_folds=5)
 auc, acc= trainer.eval_model(stack_model, X_test_stack, y_test_stack)
 print(auc)
-print("The accuracy",acc)"""
+print("The accuracy",acc)
 
 
-"""url_predictor = UrlPredect()
+url_predictor = UrlPredect()
 response_builder = ResponseBuilder()
-#Charger les données de la base de données
+
 df = url_predictor.get_data_from_database()
 
 if not df.empty:
     num_columns = df.shape[1]
     print("Nombre de colonnes dans data_dr :", num_columns)
 
-    specific_url = 'https://www.tripadvisor.fr/ShowTopic-g1-i10703-k8905211-AB_Croisiere-Cruises.html'
-    keyword = 'ab croisiere'
+    specific_url = 'https://www.mintense.fr/'
+    keyword = 'agence seo lille'
 
 
     url_predictor.url = specific_url
@@ -146,16 +153,20 @@ if not df.empty:
     print("the key word", keyword)
 
     # Obtenir des données pour l'URL et le mot-clé spécifiés
-    url_predictor.url_data, testing = url_predictor.get_data_for_url(specific_url, keyword, df, response_builder)
+    url_predictor.url_data, testing = url_predictor.get_data_for_url_keyword(specific_url, keyword, df, response_builder)
     print("la valeur de testing est égale à ", testing)
+    print("The url_data is", url_predictor.url_data)
 
-    if testing==True:
+     if testing==True:
        print("Message : df_key_url.head existe.")
        print("The url_data is", url_predictor.url_data)
    
    
     else:
+       
        print("Message : df_key_url.head n'existe pas.")
+       print("The url_data is", url_predictor.url_data)
+       
         #print("data url ::",url_predictor.url_data)
        csv_filename = './Url_data/url_data_output.csv'
        url_predictor.url_data.to_csv(csv_filename, index=False)
@@ -166,7 +177,6 @@ if not df.empty:
 
        df_url= url_predictor.get_data_url_from_database()
        url_predictor.url_data, testing = url_predictor.get_data_for_url(specific_url, keyword, df_url, response_builder)
-       #print("url_predictor.url_data", url_predictor.url_data)
        print("Columns, types, and values in url_predictor.url_data:")
        for index, row in url_predictor.url_data.iterrows():
             print(f"\nRow {index + 1}:")
@@ -174,6 +184,8 @@ if not df.empty:
                column_type = url_predictor.url_data[column].dtype
                column_value = row[column]
                print(f"  {column} ({column_type}): {column_value}")
+       print("je vais afficher pour regarder .................................................")
+       print("The url_data is", url_predictor.url_data)
     
 else:
     print("Le DataFrame est vide. Veuillez vérifier les données chargées.")
@@ -196,14 +208,14 @@ print("int columns:", int_columns)
 
 #Entrainement de données
 trainer.preprocessing()
-X_train, X_test, y_train, y_test = trainer.split_data(trainer.X, trainer.y)"""
-"""trained_model= trainer.train_RandomForestClassifier(X_train, y_train)
+X_train, X_test, y_train, y_test = trainer.split_data(trainer.X, trainer.y)
+trained_model= trainer.train_XGBClassifier(X_train, y_train)
 auc, acc = trainer.eval_model(trained_model,X_test, y_test)
-print(auc, acc)"""
+print(auc, acc)
 
 
 
-"""response_builder.trainedModels= trained_model
+response_builder.trainedModels= trained_model
 response_builder.df = trainer.df 
 response_builder.trainedModels.y = y_train
 data_test = url_predictor.url_data
@@ -216,6 +228,4 @@ url_predictor.url_data = data_test
 
 # Appeler la fonction try_for_columns avec le modèle entraîné pour prédir pour la donnée test 
 result = url_predictor.try_for_columns(trained_model, response_builder)
-print(result)
-
-"""
+print(result)"""

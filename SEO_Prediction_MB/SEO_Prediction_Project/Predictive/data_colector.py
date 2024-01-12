@@ -16,13 +16,14 @@ import re
 import os
 import logging
 import requests
+import itertools
+from bs4 import BeautifulSoup
 from webdriver_manager.firefox import GeckoDriverManager
 from .SemantiqueValues import SemantiqueValues
- 
+from requests.adapters import HTTPAdapter
+from urllib.parse import urljoin, urlparse 
 
 class DataColector:
-
-   
     #Création de la classe Datacloctor
     def __init__(self) :
 
@@ -32,6 +33,8 @@ class DataColector:
         self.used_proxy     = []
         self.cpt            = 0
         self.list_dfs       = [None,None,None,None,None]
+        self.visited_urls = set()
+        self.site_urls = set()
         
 
 
@@ -116,7 +119,7 @@ class DataColector:
 
 
 
-    #Avoir les top 10
+    #Définir si c'est top ou pas
     def get_top(self,df,nb_top):
         
         try:
@@ -128,6 +131,36 @@ class DataColector:
 
 
 
+    def crawl_url(self, url, depth, max_depth):
+        if depth > max_depth or url in self.visited_urls:
+            return
+
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+
+            soup = BeautifulSoup(response.text, 'html.parser')
+            links = [urljoin(url, a['href']) for a in soup.find_all('a', href=True)]
+
+            # Ajoutez les liens absolus au jeu des URLs du site
+            self.site_urls.update(links)
+
+            # Ajoutez cette URL à l'ensemble des URLs visités
+            self.visited_urls.add(url)
+
+            # Explorez récursivement les liens internes du site
+            for link in links:
+                absolute_link = urljoin(url, link)
+                if urlparse(absolute_link).netloc == urlparse(url).netloc:
+                    self.crawl_url(absolute_link, depth + 1, max_depth)
+
+        except requests.exceptions.RequestException as e:
+            print(f"Erreur lors de la récupération des liens pour le site {url}: {e}")
+
+
+    def get_all_site_urls(self, start_url, max_depth=3):
+        self.crawl_url(start_url, 0, max_depth)
+        return list(self.site_urls)
 
 
     def multiprocessing_function(self,nb,df, function, pool=10, target=['Url'], join=['Url'], how='left', name=''):
@@ -156,8 +189,6 @@ class DataColector:
 
         return df
      
-
-
 
 
     def get_driver(self,):
@@ -229,7 +260,7 @@ class DataColector:
         
         #Variable pour s'assurer qu'on est bien connecté
         CONNEXION_BABBARTECH = True
-
+        
             # ---------------- Récupération des informations de BabbarTech ------------------------
             #Si on est connecté
         if CONNEXION_BABBARTECH:
@@ -286,7 +317,7 @@ class DataColector:
                     with self.data_lock:
                         df.append({'Url' : url, 'HTTP code BABBAR':http_code, 'TTFB (en ms) BABBAR' : ttfb, 'Page Value BABBAR' : page_value , 'Page Trust BABBAR' : page_trust ,
                         'Semantic Value BABBAR' : semantic_value, 'Backlinks BABBAR' : backlinks, 'Backlinks host BABBAR' : host_backlinks, 'Host Outlinks BABBAR' : host_outlinks, 'Outlinks BABBAR' : outlinks})
-                                
+                    #print("J'affiche1",df)       
         now_thread = time.time()
 
 
@@ -304,7 +335,7 @@ class DataColector:
         url_norm = urllib.parse.quote_plus(url)
         
         response = requests.get(f"https://www.googleapis.com/pagespeedonline/v5/runPagespeed?strategy=desktop&url={url_norm}")
-
+    
         nb_req_max = 2
         nb_req = 0
         # Trop de requête par minute, on relance la requête au bout de 65 secondes
@@ -376,7 +407,7 @@ class DataColector:
                         #Données laboratoire
                         'Desktop First Contentful Paint Lab' : np.nan, 'Desktop Speed Index Lab' : np.nan, 'Desktop Largest Contentful Paint Lab' :  np.nan, 'Desktop Time to Interactive Lab' : np.nan,'Desktop Total Blocking Time Lab' :  np.nan, 'Desktop Cumulative Layout Shift Lab' : np.nan
                 })
-
+        #print("J'affiche2",df)
         now_thread = time.time()
 
 
@@ -397,6 +428,7 @@ class DataColector:
         nb_req_max = 2
         nb_req = 0
         # Trop de requête par minute, on relance la requête au bout de 65 secondes
+    
         while response.status_code == 429 and nb_req < nb_req_max:
             nb_req += 1
             time.sleep(25)
@@ -465,7 +497,7 @@ class DataColector:
                         #Données laboratoire
                         'Mobile First Contentful Paint Lab' : np.nan, 'Mobile Speed Index Lab' : np.nan, 'Mobile Largest Contentful Paint Lab' :  np.nan, 'Mobile Time to Interactive Lab' : np.nan,'Mobile Total Blocking Time Lab' :  np.nan, 'Mobile Cumulative Layout Shift Lab' : np.nan
                 })
-
+        #print("j'affiche3", df)
         now_thread = time.time()
 
 
@@ -556,7 +588,7 @@ class DataColector:
         else:
             with self.data_lock:
                 df.append({'Url' : url, 'Score_1fr' : np.nan})
-         
+        #print("J'affiche4",df) 
         #app.update_progressBar('1.Fr', list_len, floor(now_thread - start_thread)/pool)
     
 
@@ -572,7 +604,7 @@ class DataColector:
         # ------ Connexion ------
         #On place le driver sur l'URL Ahref
         driver = self.get_driver()
-
+        
         try:
             driver.get("https://yourtext.guru/order-premium")
             #https://1.fr/signin
@@ -732,7 +764,7 @@ class DataColector:
                     pass
 
                     print('pass2')
-
+        #print("J'affiche5",df)
         now_thread = time.time() 
         #app.update_progressBar('YourTextGuru', list_len, floor(now_thread - start_thread)/pool)
 
@@ -819,8 +851,6 @@ class DataColector:
         print('step 10 done')
 
 
-
-
     def get_all_URL_data(self,df):
         t1 = Thread ( target = self.multiprocessing_function, args = (0, df ,self.get_babbarTech_scores,  1, ))
         t2 = Thread ( target = self.multiprocessing_function, args = (1, df ,self.get_pageSpeed_scores_API,  20, ))#PageSpeed
@@ -848,11 +878,16 @@ class DataColector:
         keywords_list = self.get_similar_keywords(keyword , 20) 
         return keywords_list
 
+
+
+
     def get_Data_as_csv2(self,keyword,nb_sim_keywords,nb_links,nb_top_1):
-         
+        print("Debut de la collecte des données pour keyword") 
         keywords_list = self.get_similar_keywords(keyword , nb_sim_keywords) 
 
         red_df = self.find_URL_by_Keyword_SEMRUSH(keywords_list,nb_links)
+
+        print(red_df)
         
         print(keywords_list)
         res_df = self.get_top(red_df,nb_top_1)
@@ -888,6 +923,11 @@ class DataColector:
         for i in range(5):
             if self.list_dfs[i] is not None:
                     df = pd.merge(df,self.list_dfs[i] , how='left', left_on = list(res_df.columns), right_on = list(res_df.columns)) 
+        print(df)
+        # Afficher toutes les colonnes
+        print("Colonnes de df:", df.columns)
+        # Afficher le nombre de colonnes
+        print("Nombre de colonnes de df:", len(df.columns))
 
         df = self.get_screaming_frog_info(df)
         sm = SemantiqueValues()
@@ -898,3 +938,50 @@ class DataColector:
         print('step 10 done') 
         
         
+
+    def get_Data_as_csv3(self,start_url, keyword):
+         
+        
+        red_list = self.get_all_site_urls(start_url)
+        red_df = pd.DataFrame({'Url': red_list})
+        red_df['Keyword'] = keyword
+
+        print(red_df)
+       #res_df = res_df[ res_df['Url'].str.contains( '.gouv.fr')== False]
+        
+        t1 = Thread ( target = self.multiprocessing_function, args = (0,red_df ,self.get_babbarTech_scores,  1, ))
+    
+        t4 = Thread ( target = self.multiprocessing_function, args = (1,red_df ,self.get_1fr_scores,  2, ))#1fr
+        t3 = Thread ( target = self.multiprocessing_function, args = (3,red_df ,self.get_pageSpeed_mobile_scores_API,  20, ))#PageSpeed
+        t2 = Thread ( target = self.multiprocessing_function, args = (2,red_df ,self.get_pageSpeed_scores_API,  20, ))#PageSpeed
+        
+        t5 = Thread ( target = self.multiprocessing_function, args = (4,red_df ,self.get_yourTextGuru_scores,  1,['Keyword','Url'],['Keyword','Url'] ))#yourtext_guru
+        t1.start()
+        t4.start()
+        t3.start()
+        t5.start()
+        t3.join()
+        print("20% done")
+        t2.start() 
+        t1.join()
+        print("40% done")
+        t4.join() 
+        print("60% done")
+        t2.join()
+        print("80% done")
+        t5.join()
+        print("90% done")
+
+        df = red_df.copy()
+        for i in range(5):
+            if self.list_dfs[i] is not None:
+                    df = pd.merge(df,self.list_dfs[i] , how='left', left_on = list(red_df.columns), right_on = list(red_df.columns)) 
+        print(df)
+
+        chemin_du_fichier_csv = './dataSETs/resultats.csv'
+        df.to_csv(chemin_du_fichier_csv, index=False)
+
+       
+
+
+    

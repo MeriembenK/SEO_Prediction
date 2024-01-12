@@ -2,6 +2,7 @@
 
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
+from django.db.models import Q
 
 class User(AbstractUser):
     # Ajoutez des champs personnalisés si nécessaire
@@ -16,6 +17,7 @@ class Keyword(models.Model):
 
 
 class Data(models.Model):
+    
     Thekeyword = models.CharField(max_length=2150, null=True)  # Champ pour Keyword
     Position = models.PositiveIntegerField(null=True)  # Champ pour la position
     Url = models.CharField(max_length=200, null=True)  # Champ pour l'URL
@@ -24,7 +26,7 @@ class Data(models.Model):
     Ttfb_babbar = models.FloatField(null=True)  # Champ pour TTFB BABBAR (en ms) 
     Page_value_babbar = models.FloatField(null=True)  # Champ pour Page Value BABBAR
     Page_trust_babbar = models.FloatField(null=True) # Champ pour Page Trust BABBAR
-    Semantic_value_babbar = models.FloatField(null=True)# Champ pour Semantic Value BABBAR
+    Semantic_value_babbar = models.FloatField(null=True)# Champ pour Semantic Value BABBARs
     Backlinks_babbar = models.FloatField(null=True)  # Champ pour Backlinks BABBAR
     Backlinks_host_babbar = models.FloatField(null=True)  # Champ pour Backlinks Host BABBAR
     Host_outlinks_babbar = models.FloatField(null=True)  # Champ pour Host Outlinks BABBAR
@@ -138,9 +140,31 @@ class Data(models.Model):
     H2_1_score = models.FloatField(null=True)  # Champ pour H2-1 score
     H2_2_score = models.FloatField(null=True)  # Champ pour H2-2 score
     Meta_Robots_1_score = models.FloatField(null=True)  # Champ pour Meta Robots 1 score
-    Date_added = models.DateField(null=True, blank=True)
     Url_Score = models.FloatField(null=True)  # Champ pour Url score
-    
+
+    class Meta:
+        unique_together = ['Thekeyword', 'Url', 'Top10','Position', 'Http_code_babbar', 'Ttfb_babbar', 'Ttfb_babbar', 'Page_value_babbar',
+                           'Page_trust_babbar', 'Semantic_value_babbar', 'Backlinks_babbar', 'Backlinks_host_babbar', 'Host_outlinks_babbar', 
+                           'Outlinks_babbar', 'Desktop_first_contentful_paint_terrain', 'Desktop_first_input_delay_terain', 
+                           'Desktop_largest_contentful_paint_terrain', 'Desktop_cumulative_layout_shift_terrain',
+                           'Desktop_first_contentful_paint_lab', 'Desktop_speed_index_lab', 'Desktop_largest_contentful_paint_lab',
+                           'Desktop_time_to_interactive_lab', 'Desktop_total_blocking_time_lab', 'Desktop_cumulative_layout_shift_lab',
+                           'Mobile_first_contentful_paint_terrain', 'Mobile_first_input_delay_terain', 'Mobile_largest_contentful_paint_terrain',
+                           'Mobile_cumulative_layout_shift_terrain', 'Mobile_first_contentful_paint_lab', 'Mobile_speed_index_lab', 
+                           'Mobile_largest_contentful_paint_lab', 'Mobile_time_to_interactive_lab', 'Mobile_total_blocking_time_lab',
+                           'Mobile_cumulative_layout_shift_lab', 'SOSEO_yourtext_guru', 'DSEO_yourtext_guru', 'Score_1fr', 'Content_type', 'Status_code',
+                           'Status', 'Indexability_x', 'Indexability_status_x', 'Title1', 'Title1_length', 'Title1_pixel_width', 'Title2', 'Title2_length',
+                           'Title2_pixel_width', 'Meta_description1', 'Meta_description1_length', 'Meta_description1_Pixel_width', 'Meta_description1_Pixel_width',
+                           'Meta_description2', 'Meta_description2_length', 'Meta_description2_Pixel_width', 'Meta_description2_Pixel_width', 'Meta_description2_Pixel_width',
+                           'Meta_Keywords1', 'Meta_keywords1_length', 'H1_1', 'H1_1_length', 'H1_2', 'H1_2_length', 'H2_1', 'H2_1_length', 'H2_2', 'H2_2_length', 'Meta_robots_1',
+                           'Meta_robots_2', 'Meta_robots_3', 'X_robots_tag1', 'Meta_Refresh_1', 'Canonical_link_element1', 'Canonical_link_element2', 'rel_next_1', 'rel_prev_1',
+                           'HTTP_rel_next_1', 'HTTP_rel_prev_1', 'amphtml_link_element', 'Size_bytes', 'Word_count', 'Sentence_Count', 'Average_words_per_sentence',
+                           'Flesch_reading_ease_score', 'Readability', 'Text_ratio', 'Crawl_depth', 'Link_score', 'Inlinks', 'Unique_inlinks', 'Unique_JS_inlinks',
+                           'of_Total', 'Outlinks', 'Unique_Outlinks', 'Unique_JS_Outlinks', 'External_Outlinks', 'Unique_External_Outlinks', 'Unique_External_JS_Outlinks',
+                           'Closest_Similarity_Match', 'NoNear_Duplicates', 'Spelling_Errors', 'Grammar_Errors', 'Hash', 'Response_time', 'Last_modified', 'Redirect_URL',
+                           'Redirect_type', 'Cookies', 'HTTP_Version', 'URL_Encoded_Address', 'Crawl_Timestamp','Errors', 'Warnings', 'Total_Types', 'Unique_Types', 'Type_1',
+                           'Indexability_y', 'Indexability_Status_y', 'Title1_score', 'Meta_Description1_score', 'Meta_Description1_score', 'Meta_Keywords1_score',
+                           'Meta_Keywords1_score', 'Meta_Keywords1_score', 'H1_1_score', 'H1_2_score', 'H2_1_score', 'H2_2_score', 'Meta_Robots_1_score', 'Url_Score']
 
 class Data_Url(models.Model):
     
@@ -269,7 +293,7 @@ class Data_Url(models.Model):
     Date_added = models.DateField(null=True, blank=True)
     Url_Score = models.FloatField(null=True)  # Champ pour Url score    
 
-
+    
 
 class Keyword_Url(models.Model):
     Keyword_url = models.CharField(max_length=255, null=True)

@@ -113,7 +113,48 @@ class UrlPredect:
             return self.get_url_data(url,keyword,responseBuilder), testing
         
 
+        #Récupération de la data pour un url
+    def get_data_for_url_keyword(self,url,keyword,df,responseBuilder):
+        nb_sim_keywords = 3
+        nb_links = 30
+        nb_top_1 = 10
+        dc = DataColector()
+        df_key = df[df['Thekeyword'] == keyword]
+        df_key_url = df_key[df_key['Url'] == url]
+    
+        if df_key_url.shape[0] > 0:
+            testing= True
+            return df_key_url.head(1), testing
+        else:
+            testing= False
+            return dc.get_Data_as_csv2(keyword, nb_sim_keywords, nb_links, nb_top_1), testing    
 
+
+    """def get_all_site_data(self, start_url, keyword, df, responseBuilder):
+        # Obtenez tous les URLs du site associés au mot-clé
+        dc = DataColector()
+        site_urls = dc.get_all_site_urls(start_url)
+        
+        # Initialisez une liste pour stocker les DataFrames individuels
+        site_data_list = []
+
+        # Récupérez les données pour chaque URL du site
+        for site_url in site_urls:
+            url_data, testing = self.get_data_for_url(site_url, keyword, df, responseBuilder)
+            if isinstance(url_data, pd.DataFrame):
+                site_data_list.append(url_data)
+            else:
+                print("Attention : La fonction get_data_for_url n'a pas renvoyé un DataFrame.")
+
+        # Concaténez les DataFrames de la liste en un seul DataFrame
+        if site_data_list:
+            site_data = pd.concat(site_data_list, ignore_index=True)
+            return site_data
+        else:
+            print("Attention : Aucune donnée n'a été collectée.")
+            return pd.DataFrame()"""
+    
+       
     #Collecter la data d'un URL
     def get_url_data(self,url,keyword,responseBuilder):
         self.url        = url
@@ -129,6 +170,7 @@ class UrlPredect:
         return my_url_data
         
 
+  
 
      #Garder que les colonnes utiles pour la prédictions de la position de l'URL, pour un df de la classe   
     def fun_fun(self):

@@ -72,7 +72,12 @@ def create_data_url_object(row,data_sets_directory):
                 Size_bytes_value = row.get('Size (bytes)', ''),
                 word_count_value = row.get('Word Count', ''),
                 H2_2_score_value=row.get('H2-2 score', '')
-                
+                Sentence_Count_value = row.get('Sentence Count', ''),
+                Flesch_reading_ease_score_value=row.get('Flesch Reading Ease Score', ''),
+                Crawl_depth_value= row.get('Crawl Depth', ''),
+                Link_score_value= row.get('Link Score', ''),
+
+
             
                 data_url = Data_Url(
                     Thekeyword=row.get('Keyword', ''),
@@ -151,13 +156,13 @@ def create_data_url_object(row,data_sets_directory):
                     amphtml_link_element = row.get('amphtml Link Element', ''),
                     Size_bytes = process_column(Size_bytes_value),
                     Word_count = process_column(word_count_value),
-                    Sentence_Count = row.get('Sentence Count', ''),
+                    Sentence_Count = process_column(Sentence_Count_value),
                     Average_words_per_sentence = row.get('Average Words Per Sentence', ''),
-                    Flesch_reading_ease_score = row.get('Flesch Reading Ease Score', ''),
+                    Flesch_reading_ease_score = process_column(Flesch_reading_ease_score_value),
                     Readability = row.get('Readabilit', ''),
                     Text_ratio = row.get('Text Ratio', ''),
-                    Crawl_depth = row.get('Crawl Depth', ''),
-                    Link_score = row.get('Link Score', ''),
+                    Crawl_depth = process_column(Crawl_depth_value),
+                    Link_score = process_column(Link_score_value),
                     Inlinks = row.get('Inlinks', ''),
                     Unique_inlinks = row.get('Unique Inlinks', ''),
                     Unique_JS_inlinks = row.get('Unique JS Inlinks', ''),
@@ -203,7 +208,6 @@ def create_data_url_object(row,data_sets_directory):
 
                 return data_url
             
-
 
 def save_data_url_objects(data_url_objects):
     for data_url_object in data_url_objects:

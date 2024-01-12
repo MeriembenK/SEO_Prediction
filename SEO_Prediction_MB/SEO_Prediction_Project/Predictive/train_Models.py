@@ -88,18 +88,11 @@ class TrainModels:
 
     #Prétraitement des données, remplacement des nan par 0 ou la moyenne
     def preprocessing(self):
-        """for column in self.df.columns:
-            print(f"Colonne : {column}, Type : {self.df[column].dtype}")"""
 
         df = self.df
-               
-        """print("Column names:", df.columns)
-        print("DataFrame shape:", df.shape)"""
-        print("Top10 column:", df['Top10'])
-
-
-        print(df.shape)
-        print(df['Top10'])
+        #print("Top10 column:", df['Top10'])
+        #print(df.shape)
+        #print(df['Top10'])
        
         df['Title1_length'             ].replace( np.nan,0, inplace=True)
         df['Desktop_total_blocking_time_lab'].replace( np.nan,0, inplace=True)
