@@ -32,9 +32,9 @@ def process_column(value):
 
 
 # Importez d'abord les mots-clés
-def import_keywords_from_csv(directory_path, Keyword):
+def import_keywords_from_csv(directory_path, keyword_searshed):
     for filename in os.listdir(directory_path):
-        if filename.endswith(".csv") and keyword in filename:
+        if filename.endswith(".csv") and keyword_searshed in filename:
             csv_path = os.path.join(directory_path, filename)
             df = pd.read_csv(csv_path)
  
@@ -48,9 +48,9 @@ def import_keywords_from_csv(directory_path, Keyword):
 
 
         
-def import_data_from_csv_files(directory_path, keyword):
+def import_data_from_csv_files(directory_path, keyword_searched):
     for filename in os.listdir(directory_path):
-        if filename.endswith(".csv") and keyword in filename:
+        if filename.endswith(".csv") and keyword_searched in filename:
             csv_path = os.path.join(directory_path, filename)
             df = pd.read_csv(csv_path)
         
