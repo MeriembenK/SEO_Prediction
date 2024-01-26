@@ -1,3 +1,4 @@
+"""**************************************************************************MODELES DE MACHINE LEARNING**************************************************************************"""
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier

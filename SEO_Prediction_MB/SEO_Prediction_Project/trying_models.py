@@ -27,8 +27,30 @@ trainer.df = trainer.data_to_drop(trainer.df)
 trainer.preprocessing()"""
 
 
-"""dc = DataColector()
-links = dc.get_all_urls_for_site("https://www.hyffen.com/agence")
+dc = DataColector()
+keyword = 'booking hôtel'
+site_url = 'https://www.officiel-des-vacances.com/bookingcom'
+nb_sim_keywords = 3
+nb_links = 10
+nb_top_1 = 10
+pool = 1
+
+site_data = dc.get_Data_as_csv2(keyword, nb_sim_keywords, nb_links, nb_top_1)
+
+print("Site Data:")
+print(site_data)
+
+df_example  = pd.read_csv('./dataSETs/'+keyword+'.csv')
+print(df_example)
+
+"""example_site_url = 'https://www.example.com'
+site_data_example = dc.collect_data_for_all_urls_in_site(example_site_url, df_example, pool)
+    
+# Afficher les données du site (exemple)
+print("\nSite Data Example:")
+print(site_data_example)
+"""
+"""links = dc.get_all_urls_for_site("https://www.hyffen.com/agence")
 print(links)
 print("Nombre de liens :", len(links))"""
 
@@ -92,13 +114,13 @@ print(all_site_urls)
 print("Nombre de liens :", len(all_site_urls))"""
 
 
-trainer = TrainModels()
+"""trainer = TrainModels()
 # Read data from Data Base
 trainer.read_my_data()
 result = trainer.df.loc[trainer.df['Thekeyword'] == 'agence seo']
 
 # Affichage du résultat
-print("reultat de hotel",result)
+print("reultat de hotel",result)"""
 
 # Accéder aux DataFrames créés par la méthode
 """trainer.df = trainer.data_to_drop(trainer.df)

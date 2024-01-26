@@ -1,3 +1,5 @@
+"""*****************************************************************URL PREDICT*****************************************************************************************"""
+
 from .SemantiqueValues import SemantiqueValues
 from .data_colector import DataColector 
 from SEO_Prediction_App.models import Data, Data_Url

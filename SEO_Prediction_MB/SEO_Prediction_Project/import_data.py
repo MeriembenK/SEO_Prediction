@@ -232,6 +232,10 @@ def remove_duplicates_in_database():
 
      # Identifiez les doublons en utilisant la méthode distinct de Django
     duplicates_to_remove = Data.objects.values(*unique_key_columns).annotate(count=Count('id')).filter(count__gt=1)
+   
+    for duplicate in duplicates_to_remove:
+        duplicate_key_values = ', '.join(f"{key}: {duplicate[key]}" for key in unique_key_columns)
+        print(f"Pour les valeurs {duplicate_key_values}, le nombre de doublons est {duplicate['count']}.")
 
     # Supprimez les doublons
     for duplicate in duplicates_to_remove:
@@ -244,6 +248,7 @@ def remove_duplicates_in_database():
         # Supprimez les instances
         instances_to_delete.delete()
 
+
 class MyHandler(FileSystemEventHandler):
     def on_modified(self, event):
         if event.is_directory:
@@ -251,8 +256,8 @@ class MyHandler(FileSystemEventHandler):
         if event.src_path.endswith(".csv"):
             print(f"Modification détectée dans le fichier: {event.src_path}")
             try:
-                import_keywords_from_csv(data_sets_directory)
-                import_data_from_csv_files(data_sets_directory)
+                import_keywords_from_csv(data_sets_directory, "Hôtel")
+                import_data_from_csv_files(data_sets_directory, "Hôtel")
             except pd.errors.EmptyDataError:
                 print(f"Le fichier {event.src_path} est vide ou ne contient pas de colonnes.")
             except Exception as e:
@@ -260,30 +265,33 @@ class MyHandler(FileSystemEventHandler):
 
 
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
    
-     """event_handler = MyHandler()
-     observer = Observer()
-     observer.schedule(event_handler, path=data_sets_directory, recursive=False)
-     observer.start()
+""" print("ça éxecute?")
+    remove_duplicates_in_database()
+    
+   
+event_handler = MyHandler()
+observer = Observer()
+observer.schedule(event_handler, path=data_sets_directory, recursive=False)
+observer.start()
 
-     try:
+try:
         while True:
             time.sleep(1) 
-     except KeyboardInterrupt:
+except KeyboardInterrupt:
         observer.stop()
-     observer.join()"""
+        observer.join()"""
 
 # Delete all objects in the Data and Keyword models
 """Data.objects.all().delete()
 Keyword.objects.all().delete()
 
-print("All data and keywords have been deleted.")
+print("All data and keywords have been deleted.")"""
   
-data_count = Data.objects.count()
-keyword_count = Keyword.objects.count()
+"""data_count = Data.objects.count()
+ keyword_count = Keyword.objects.count()
 
-print(f"Nombre de données (Data) dans la base de données : {data_count}")
-print(f"Nombre de mots-clés (Keyword) dans la base de données : {keyword_count}")
-"""
-#remove_duplicates_in_database()
+ print(f"Nombre de données (Data) dans la base de données : {data_count}")
+ print(f"Nombre de mots-clés (Keyword) dans la base de données : {keyword_count}")"""
+    

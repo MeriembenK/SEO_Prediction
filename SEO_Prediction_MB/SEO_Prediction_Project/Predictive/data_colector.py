@@ -1,3 +1,5 @@
+"""**********************************************************************COLLECTION DES DONNEES************************************************************************************"""
+
 from multiprocessing.pool import ThreadPool
 from threading import Lock, Thread
 from functools import partial
@@ -23,6 +25,7 @@ from .SemantiqueValues import SemantiqueValues
 from requests.adapters import HTTPAdapter
 from urllib.parse import urljoin, urlparse 
 
+
 class DataColector:
     #Création de la classe Datacloctor
     def __init__(self) :
@@ -41,16 +44,7 @@ class DataColector:
 
      #Avoir des mots clés similaires au mot clé sélectionné 
     def get_similar_keywords(self,keyword,nb_links):
-        """
-        Get the most similar keywords to a given keyword using the Semrush API.
 
-        Args:
-            keyword (str): The keyword to get similar keywords for.
-            nb_links (int): The number of similar keywords to return.
-
-        Returns:
-            list: A list of the most similar keywords.
-        """
         query = keyword
         query_norm = query.strip().replace('\s+',' ')
         query_norm = ' '.join(query_norm.split())
@@ -161,6 +155,7 @@ class DataColector:
     def get_all_site_urls(self, start_url, max_depth=3):
         self.crawl_url(start_url, 0, max_depth)
         return list(self.site_urls)
+
 
 
     def multiprocessing_function(self,nb,df, function, pool=10, target=['Url'], join=['Url'], how='left', name=''):
@@ -880,11 +875,25 @@ class DataColector:
 
 
 
+    def collect_data_for_all_urls_in_site(self, site_url, df, pool=1):
+        # Récupérer le domaine du site
+        site_domain = urlparse(site_url).netloc
 
+        # Filtrer les URLs du même site
+        site_urls = df[df['Url'].apply(lambda url: urlparse(url).netloc == site_domain)]['Url'].tolist()
+
+        # Créer un DataFrame avec les URLs du site
+        site_data = pd.DataFrame({'Url': site_urls})
+
+        # Obtenir les données pour tous les URLs du même site
+        site_data = self.get_all_URL_data(site_data, pool=pool)
+
+        return site_data
+    
+  
     def get_Data_as_csv2(self,keyword,nb_sim_keywords,nb_links,nb_top_1):
         print("Debut de la collecte des données pour keyword") 
         keywords_list = self.get_similar_keywords(keyword , nb_sim_keywords) 
-
         red_df = self.find_URL_by_Keyword_SEMRUSH(keywords_list,nb_links)
 
         print(red_df)
