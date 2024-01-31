@@ -17,14 +17,14 @@ print("Mots-clés similaires pour", keyword_searched, ":")
 print(similar_keywords)
 
 # Appelez la méthode get_Data_as_csv2 pour traiter les données
-nb_sim_keywords = 20
+"""nb_sim_keywords = 20
 nb_links = 100
 nb_top_1 = 10
-
-"""nb_sim_keywords = 3
-nb_links = 10
-nb_top_1 = 10
 """
+nb_sim_keywords = 3
+nb_links = 20
+nb_top_1 = 10
+
 
 res_df = dc.get_Data_as_csv2(keyword_searched, nb_sim_keywords, nb_links, nb_top_1)
 print("Données traitées pour le mot-clé", keyword_searched, ":")

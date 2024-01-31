@@ -57,9 +57,10 @@ def import_data_from_csv_files(directory_path, keyword_searched):
             for _, row in df.iterrows():
                 # ... (rest of your code)
                  Thekeyword = str(row.get('Keyword', ''))
+                 Keyword = keyword_searched
                 #print(Thekeyword)
                  data_dict = {
-                    
+                    'Keyword' : Keyword,
                     'Thekeyword': Thekeyword,
                     'Url': row.get('Url', ''),
                     'Top10': row.get('Top10', ''),
@@ -206,7 +207,7 @@ def import_data_from_csv_files(directory_path, keyword_searched):
 def remove_duplicates_in_database():
     # Ajoutez toutes les colonnes nécessaires pour construire la clé unique
     unique_key_columns = [
-        'Thekeyword', 'Position', 'Url', 'Top10', 'Http_code_babbar', 'Ttfb_babbar',
+        'Thekeyword','Keyword', 'Position', 'Url', 'Top10', 'Http_code_babbar', 'Ttfb_babbar',
         'Page_value_babbar', 'Page_trust_babbar', 'Semantic_value_babbar', 'Backlinks_babbar',
         'Backlinks_host_babbar', 'Host_outlinks_babbar', 'Outlinks_babbar', 'Desktop_first_contentful_paint_terrain', 
         'Desktop_first_input_delay_terain', 'Desktop_largest_contentful_paint_terrain', 'Desktop_cumulative_layout_shift_terrain',
@@ -256,8 +257,8 @@ class MyHandler(FileSystemEventHandler):
         if event.src_path.endswith(".csv"):
             print(f"Modification détectée dans le fichier: {event.src_path}")
             try:
-                import_keywords_from_csv(data_sets_directory, "Hôtel")
-                import_data_from_csv_files(data_sets_directory, "Hôtel")
+                import_keywords_from_csv(data_sets_directory, "voyage")
+                import_data_from_csv_files(data_sets_directory, "voyage")
             except pd.errors.EmptyDataError:
                 print(f"Le fichier {event.src_path} est vide ou ne contient pas de colonnes.")
             except Exception as e:
@@ -265,23 +266,19 @@ class MyHandler(FileSystemEventHandler):
 
 
 
-#if __name__ == "__main__":
+if __name__ == "__main__":
    
-""" print("ça éxecute?")
-    remove_duplicates_in_database()
-    
-   
-event_handler = MyHandler()
-observer = Observer()
-observer.schedule(event_handler, path=data_sets_directory, recursive=False)
-observer.start()
+  event_handler = MyHandler()
+  observer = Observer()
+  observer.schedule(event_handler, path=data_sets_directory, recursive=False)
+  observer.start()
 
-try:
+  try:
         while True:
             time.sleep(1) 
-except KeyboardInterrupt:
+  except KeyboardInterrupt:
         observer.stop()
-        observer.join()"""
+        observer.join()
 
 # Delete all objects in the Data and Keyword models
 """Data.objects.all().delete()
@@ -289,9 +286,10 @@ Keyword.objects.all().delete()
 
 print("All data and keywords have been deleted.")"""
   
-"""data_count = Data.objects.count()
- keyword_count = Keyword.objects.count()
+data_count = Data.objects.count()
+keyword_count = Keyword.objects.count()
 
- print(f"Nombre de données (Data) dans la base de données : {data_count}")
- print(f"Nombre de mots-clés (Keyword) dans la base de données : {keyword_count}")"""
-    
+print(f"Nombre de données (Data) dans la base de données : {data_count}")
+print(f"Nombre de mots-clés (Keyword) dans la base de données : {keyword_count}")
+
+#remove_duplicates_in_database()    

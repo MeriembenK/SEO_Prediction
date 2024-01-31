@@ -46,7 +46,7 @@ class ResponseBuilder:
         x_procesed = self.trainedModels.X
         y = self.trainedModels.y
         self.info_of_data = {"number of links":x_init['Url'].nunique(),"number of links Top":x_init[y == 0]['Url'].nunique(),"number of keywords":x_init['Keyword'].nunique(),"number of lines":x_procesed.shape[0],"number of columns":x_procesed.shape[1]} 
-
+        print(self.info_of_data)
 
     def get_top(self,df,nb_top):
         df_r = df.copy()
@@ -171,18 +171,23 @@ class ResponseBuilder:
         return fig
 
 
-    def get_poucentage_of_classes(self):
+    def get_percentage_of_classes(self):
         y = self.df['Top10']
         nb_var = len(y)
         nb_not_top = sum(y)
         nb_top = len(y) - nb_not_top
 
-        labels = ['Top','Not Top']
-        values = [(100*nb_top)/nb_var, (100*nb_not_top)/nb_var]
+        percentage_top = (100 * nb_top) / nb_var
+        percentage_not_top = (100 * nb_not_top) / nb_var
+
+        labels = ['Top', 'Not Top']
+        values = [percentage_top, percentage_not_top]
         text = ["{0:.2f} %".format(i)  for i in values]
 
-        fig = go.Figure(data=[go.Pie(labels=labels, values=values, text=text, textinfo='text',marker_colors=['#D048B6','rgb(240,240,240)'])]).update_layout(  paper_bgcolor= "#27293D",font_color="white",width=450,height=350,margin=dict(t=30  )) 
-        return fig
+        fig = go.Figure(data=[go.Pie(labels=labels, values=values, text=text, textinfo='text', marker_colors=['#D048B6', 'rgb(240,240,240)'])]).update_layout(paper_bgcolor="#27293D", font_color="white", width=450, height=350, margin=dict(t=30))
+    
+        return fig, percentage_top, percentage_not_top
+
 
 
     def get_training_graphs(self):

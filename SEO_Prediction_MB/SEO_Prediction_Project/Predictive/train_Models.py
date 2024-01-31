@@ -30,17 +30,18 @@ class TrainModels:
         self.models = None
         self.path   = None
         self.X_train_stack = None
+        self.keyword= None
 
 
     #Lecture de la data depuis la BDD, en ignorant certaines colonnes, en faisant la conversion de certaines colonne de type object au type float et gestion des colonnes catégoriques
     def read_my_data(self):
-        colonnes_exclues = ['id','Position','Url_Score', 'HTTP_Version','Http_code_babbar','Thekeyword','Url','Content_type','Status_code','Status','Indexability_x','Indexability_status_x'
+        colonnes_exclues = ['id','Keyword','Position','Url_Score', 'HTTP_Version','Http_code_babbar','Thekeyword','Url','Content_type','Status_code','Status','Indexability_x','Indexability_status_x'
                             ,'X_robots_tag1','Meta_Robots_1_score','Meta_Refresh_1','Canonical_link_element1','rel_next_1','rel_prev_1','HTTP_rel_next_1','HTTP_rel_prev_1','amphtml_link_element',
                               'Readability','Link_score','Closest_Similarity_Match','NoNear_Duplicates','Spelling_Errors','Grammar_Errors','Hash','Last_modified','Redirect_URL',
                               'Redirect_type','Cookies','URL_Encoded_Address','Crawl_Timestamp','Type_1','Indexability_y','Indexability_Status_y', 'Date_added']
         toutes_colonnes = [f.name for f in Data._meta.get_fields()]
         colonnes_incluses = [nom_colonne for nom_colonne in toutes_colonnes if nom_colonne not in colonnes_exclues]
-        data_queryset = Data.objects.all().values(*colonnes_incluses)
+        data_queryset = Data.objects.filter(Keyword=self.keyword).values(*colonnes_incluses)
         self.df = pd.DataFrame.from_records(data_queryset) 
         self.df = self.df.convert_dtypes()
         

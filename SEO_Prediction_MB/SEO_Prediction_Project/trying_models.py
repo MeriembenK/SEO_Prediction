@@ -12,95 +12,73 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from Predictive.data_colector import DataColector 
+from SEO_Prediction_App.models import Keyword
 
 
-"""# Initialisation de la classe TrainModels
+# Récupérer tous les mots-clés depuis la base de données
+keywords = Keyword.objects.all()
+
+# Afficher les options disponibles à l'utilisateur
+print("Choisissez le mot-clé :")
+for index, keyword in enumerate(keywords, start=1):
+    print(f"{index}. {keyword.Keyword}")
+
+# Demander à l'utilisateur de saisir le numéro du mot-clé
+selected_keyword_index = int(input("Entrez le numéro du mot-clé que vous souhaitez : "))
+
+# Vérifier si le numéro saisi est valide
+if 1 <= selected_keyword_index <= len(keywords):
+    # Récupérer le mot-clé sélectionné par l'utilisateur
+    selected_keyword = keywords[selected_keyword_index - 1]
+    print(f"Vous avez choisi le mot-clé : {selected_keyword.Keyword}")
+else:
+    print("Numéro de mot-clé invalide.")
+
+# Initialisation de la classe TrainModels
 trainer = TrainModels()
+response_builder = ResponseBuilder()
+trainer.keyword= selected_keyword.Keyword
 
 # Read data from Data Base
 trainer.read_my_data()
+nombre_lignes = trainer.df.shape[0]
+print("Nombre de lignes dans le DataFrame:", nombre_lignes)
 
 # Accéder aux DataFrames créés par la méthode
 trainer.df = trainer.data_to_drop(trainer.df)
+response_builder.df= trainer.df
 
 # Prétraitement de la data
-trainer.preprocessing()"""
+trainer.preprocessing()
 
+#Split data entre data d'entrainement et la data du test
+X_train, X_test, y_train, y_test = trainer.split_data(trainer.X, trainer.y)
 
-dc = DataColector()
-keyword = 'booking hôtel'
-site_url = 'https://www.officiel-des-vacances.com/bookingcom'
-nb_sim_keywords = 3
-nb_links = 10
-nb_top_1 = 10
-pool = 1
+# Display the number of elements in each set
+print("Number of elements in X_train:", X_train.shape[0])
+print("Number of elements in y_train:", y_train.shape[0])
+print("Number of elements in X_test:", X_test.shape[0])
+print("Number of elements in y_test:", y_test.shape[0])
 
-site_data = dc.get_Data_as_csv2(keyword, nb_sim_keywords, nb_links, nb_top_1)
+"*************************Testing models**********************************"
+"""stack_model, X_test_stack, y_test_stack, Model1, Model2, Model3, Model4, Model5= trainer.train_and_evaluate_stacking(X_train, y_train, X_test, y_test, n_folds=5)
+auc, acc= trainer.eval_model(stack_model, X_test_stack, y_test_stack)
+print(auc)
+print("The accuracy",acc)"""
 
-print("Site Data:")
-print(site_data)
+trainer.Final_get_importance()
 
-df_example  = pd.read_csv('./dataSETs/'+keyword+'.csv')
-print(df_example)
-
-"""example_site_url = 'https://www.example.com'
-site_data_example = dc.collect_data_for_all_urls_in_site(example_site_url, df_example, pool)
-    
-# Afficher les données du site (exemple)
-print("\nSite Data Example:")
-print(site_data_example)
-"""
-"""links = dc.get_all_urls_for_site("https://www.hyffen.com/agence")
-print(links)
-print("Nombre de liens :", len(links))"""
-
-
-
-"**********************************************************************Analyse des données****************************************************************************************"
-"""print(trainer.df.isnull().sum())
-print(trainer.df.dtypes)
-
-
-sns.countplot(x='Top10', data=trainer.df)
-plt.title('Distribution of Top10')
-plt.show()
-
-
-# Display summary statistics
-print(trainer.df.describe())
-
-trainer.train_models(trainer.df)  # Train your models
-trainer.display_feature_importance('RandomForestClassifier')
-importance_scores = trainer.models['RandomForestClassifier'][3]['score']
-# Identify features with low importance scores (e.g., threshold = 0.01)
-low_importance_features = trainer.df.columns[importance_scores < 0.01]
-print("Features with low importance:", low_importance_features)
-
-# Suppression des colonnes inutiles
-
-
-result = trainer.train_models(trainer.df)
-
-if result is not None:
-    # Display feature importance for RandomForestClassifier
-    trainer.display_feature_importance('RandomForestClassifier')
-else:
-    print("Error occurred during training.")
-
-trainer.display_feature_importance('RandomForestClassifier')"""
-
-
-
-
-
+fig, percentage_top, percentage_not_top = response_builder.get_percentage_of_classes()
+print("Pourcentage des non Top",percentage_not_top)
+print("Pourcentage des Top",percentage_top)
 
 """*********************************************************Testing récupération url site****************************************************************************"""
 
 """url_predictor = UrlPredect()
 df = url_predictor.get_data_from_database()
-dc = DataColector()
+dc = DataColector()"""
 
-
+"""
 # Utilisez la méthode get_all_site_urls à partir de l'instance
 start_url = "https://www.agence-naga.fr/expertise/webmarketing/referencement-naturel-seo-lyon/"
 keyword = "agence seo nantes referencement44fr"
@@ -111,10 +89,10 @@ print(df.columns)
 
 all_site_urls = dc.get_all_site_urls(start_url, 3)
 print(all_site_urls)
-print("Nombre de liens :", len(all_site_urls))"""
+print("Nombre de liens :", len(all_site_urls))
 
 
-"""trainer = TrainModels()
+trainer = TrainModels()
 # Read data from Data Base
 trainer.read_my_data()
 result = trainer.df.loc[trainer.df['Thekeyword'] == 'agence seo']
@@ -139,24 +117,12 @@ nan_info = pd.DataFrame({
     'Type': trainer.df[columns_with_nan].dtypes.tolist()
 })
 
-print("Informations sur les colonnes avec des valeurs NaN :\n", nan_info)
+print("Informations sur les colonnes avec des valeurs NaN :\n", nan_info)"""
 
 
-# Display the number of elements in each set
-print("Number of elements in X_train:", X_train.shape[0])
-print("Number of elements in y_train:", y_train.shape[0])
-print("Number of elements in X_test:", X_test.shape[0])
-print("Number of elements in y_test:", y_test.shape[0])
-"""
-"*************************Testing models**********************************"
-"""stack_model, X_test_stack, y_test_stack, Model1, Model2, Model3, Model4, Model5= trainer.train_and_evaluate_stacking(X_train, y_train, X_test, y_test, n_folds=5)
-auc, acc= trainer.eval_model(stack_model, X_test_stack, y_test_stack)
-print(auc)
-print("The accuracy",acc)
 
+"""url_predictor = UrlPredect()
 
-url_predictor = UrlPredect()
-response_builder = ResponseBuilder()
 
 df = url_predictor.get_data_from_database()
 
@@ -164,8 +130,8 @@ if not df.empty:
     num_columns = df.shape[1]
     print("Nombre de colonnes dans data_dr :", num_columns)
 
-    specific_url = 'https://www.mintense.fr/'
-    keyword = 'agence seo lille'
+    specific_url = 'https://www.premiereclasse.com/fr-fr/'
+    keyword = 'hôtel première classe'
 
 
     url_predictor.url = specific_url
@@ -179,7 +145,7 @@ if not df.empty:
     print("la valeur de testing est égale à ", testing)
     print("The url_data is", url_predictor.url_data)
 
-     if testing==True:
+    if testing==True:
        print("Message : df_key_url.head existe.")
        print("The url_data is", url_predictor.url_data)
    
@@ -250,4 +216,5 @@ url_predictor.url_data = data_test
 
 # Appeler la fonction try_for_columns avec le modèle entraîné pour prédir pour la donnée test 
 result = url_predictor.try_for_columns(trained_model, response_builder)
-print(result)"""
+print(result)
+"""

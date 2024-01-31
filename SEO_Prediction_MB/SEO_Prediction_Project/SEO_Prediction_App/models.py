@@ -19,6 +19,7 @@ class Keyword(models.Model):
 class Data(models.Model):
     
     Thekeyword = models.CharField(max_length=2150, null=True)  # Champ pour Keyword
+    Keyword = models.CharField(max_length=150, null=True) # champ pour Keyword principale
     Position = models.PositiveIntegerField(null=True)  # Champ pour la position
     Url = models.CharField(max_length=200, null=True)  # Champ pour l'URL
     Top10 = models.BooleanField(null=True)  # Champ pour Top 10 (0 ou 1)
@@ -168,7 +169,7 @@ class Data(models.Model):
 
 class Data_Url(models.Model):
     
-    Thekeyword = models.CharField(max_length=2150, null=True)  # Champ pour Keyword
+    Thekeyword = models.CharField(max_length=150, null=True)  # Champ pour Keyword
     #Position = models.PositiveIntegerField(null=True)  # Champ pour la position
     Url = models.CharField(max_length=200, null=True)  # Champ pour l'URL
     Top10 = models.BooleanField(null=True)  # Champ pour Top 10 (0 ou 1)
