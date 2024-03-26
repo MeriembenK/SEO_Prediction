@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_extensions',
+    'sass_processor',
+    'widget_tweaks',
     'SEO_Prediction_App',
     
 ]
@@ -59,7 +61,7 @@ ROOT_URLCONF = 'SEO_Prediction_Project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['templates'],
+        
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -132,6 +134,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
+# Définissez le répertoire dans lequel les fichiers statiques collectés seront stockés.
+STATIC_ROOT = BASE_DIR / 'SEO_Prediction_App/static/'
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [

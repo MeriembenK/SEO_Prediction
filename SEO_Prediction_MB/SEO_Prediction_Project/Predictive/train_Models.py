@@ -16,6 +16,8 @@ from sklearn.model_selection import KFold
 from SEO_Prediction_App.models import Data
 import seaborn as sns
 import matplotlib.pyplot as plt
+from SEO_Prediction_App.models import Test
+from django.utils import timezone
 
 class TrainModels:
 
@@ -30,17 +32,18 @@ class TrainModels:
         self.models = None
         self.path   = None
         self.X_train_stack = None
+        self.keyword= None
 
 
     #Lecture de la data depuis la BDD, en ignorant certaines colonnes, en faisant la conversion de certaines colonne de type object au type float et gestion des colonnes catégoriques
     def read_my_data(self):
-        colonnes_exclues = ['id','Position','Url_Score', 'HTTP_Version','Http_code_babbar','Thekeyword','Url','Content_type','Status_code','Status','Indexability_x','Indexability_status_x'
+        colonnes_exclues = ['id','Keyword','Position','Url_Score', 'HTTP_Version','Http_code_babbar','Thekeyword','Url','Content_type','Status_code','Status','Indexability_x','Indexability_status_x'
                             ,'X_robots_tag1','Meta_Robots_1_score','Meta_Refresh_1','Canonical_link_element1','rel_next_1','rel_prev_1','HTTP_rel_next_1','HTTP_rel_prev_1','amphtml_link_element',
                               'Readability','Link_score','Closest_Similarity_Match','NoNear_Duplicates','Spelling_Errors','Grammar_Errors','Hash','Last_modified','Redirect_URL',
                               'Redirect_type','Cookies','URL_Encoded_Address','Crawl_Timestamp','Type_1','Indexability_y','Indexability_Status_y', 'Date_added']
         toutes_colonnes = [f.name for f in Data._meta.get_fields()]
         colonnes_incluses = [nom_colonne for nom_colonne in toutes_colonnes if nom_colonne not in colonnes_exclues]
-        data_queryset = Data.objects.all().values(*colonnes_incluses)
+        data_queryset = Data.objects.filter(Keyword=self.keyword).values(*colonnes_incluses)
         self.df = pd.DataFrame.from_records(data_queryset) 
         self.df = self.df.convert_dtypes()
         
@@ -77,7 +80,10 @@ class TrainModels:
         # Gérer les colonnes catégoriques
              self.df[column] = pd.to_numeric(self.df[column], errors='coerce', downcast='float')
 
-
+    def replace_underscore_with_space(self, input_string):
+      # Ajoute "_score" à la fin de la chaîne de caractères
+       output_string = input_string + '_score'
+       return output_string
 
     #Suppression de certaines colonnes inutiles
     def data_to_drop(self,df):
@@ -96,6 +102,8 @@ class TrainModels:
         #print(df['Top10'])
        
         df['Title1_length'             ].replace( np.nan,0, inplace=True)
+        df['Title2_length'             ].replace( np.nan,0, inplace=True)
+        df['Title2_pixel_width'             ].replace( np.nan,0, inplace=True)
         df['Desktop_total_blocking_time_lab'].replace( np.nan,0, inplace=True)
         df['Title1'             ].replace( np.nan,0, inplace=True)
         df['Title2'             ].replace( np.nan,0, inplace=True)
@@ -210,8 +218,6 @@ class TrainModels:
         #Evaluation du modele en retournant l'accuracy et l'auc
     def eval_model(self,model,X_test,y_test):
         num_data_test = X_test.shape[0]
-        print("Nombre de données dans X_test :", num_data_test)
-    
         y_predect = model.predict(X_test)
         auc = roc_auc_score(y_test, y_predect)
         acc = accuracy_score(y_test, y_predect)
@@ -221,10 +227,10 @@ class TrainModels:
         plt.figure(figsize=(8, 6))
         sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', cbar=False,
                 xticklabels=['Top10', 'Non Top10'], yticklabels=['Top10', ' Non Top10'])
-        plt.xlabel('Prédictions')
+        """plt.xlabel('Prédictions')
         plt.ylabel('Vraies valeurs')
         plt.title('Matrice de confusion')
-        plt.show()
+        plt.show()"""
         return auc , acc       
 
 
@@ -233,32 +239,39 @@ class TrainModels:
     #Stacking
     def train_and_evaluate_stacking(self, X_train, y_train, X_test, y_test,  n_folds=5):
      # Entraînez les modèles individuels
-      model1 = self.train_XGBClassifier(X_train, y_train)
-      auc , acc = self.eval_model(model1, X_test, y_test)
+      models = {}
+      model1,auc, acc, importance_score = self.train_model_kFold(self.train_XGBClassifier)
+      models.update({'XGBClassifier': [model1, auc, acc, importance_score]})
+      print("20%")
 
       print("The AUC model1 : XGBClassifier ",auc)
       print("The ACC model1 : XGBClassifier",acc)
 
-      model2 = self.train_ExtraTreesClassifier(X_train, y_train)
-      auc , acc = self.eval_model(model2, X_test, y_test)
+      model2,auc, acc, importance_score = self.train_model_kFold(self.train_ExtraTreesClassifier)
+      models.update({'ExtraTreesClassifier': [model2, auc, acc, importance_score]})
+      print("40%")
 
       print("The AUC model2 : ExtraTreesClassifier",auc)
       print("The ACC model2 : ExtraTreesClassifier",acc)
 
-      model3 = self.train_RandomForestClassifier(X_train, y_train)
-      uc , acc = self.eval_model(model3, X_test, y_test)
+      model3,auc, acc, importance_score = self.train_model_kFold(self.train_RandomForestClassifier)
+      models.update({'RandomForestClassifier': [model3, auc, acc, importance_score]})
+      print("60%")
 
       print("The AUC model3 : RandomForestClassifier",auc)
       print("The ACC model3 : RandomForestClassifier",acc)
 
-      model4 = self.train_GradientBoostingClassifier(X_train, y_train)
-      auc , acc = self.eval_model(model4, X_test, y_test)
+      model4, auc, acc, importance_score = self.train_model_kFold(self.train_GradientBoostingClassifier)
+      models.update({'GradientBoostingClassifier': [model4, auc, acc, importance_score]})
+      print("80%")
 
       print("The AUC model4 : GradientBoostingClassifier",auc)
       print("The ACC model4 : GradientBoostingClassifier",acc)
 
-      model5 = self.train_AdaBoostClassifier(X_train, y_train)
-      auc , acc = self.eval_model(model5, X_test, y_test)
+      model5, auc, acc, importance_score = self.train_model_kFold(self.train_AdaBoostClassifier)
+      models.update({'AdaBoostClassifier': [model5, auc, acc, importance_score]})
+      print("100%")
+
 
       print("The AUC model5 : AdaBoostClassifier",auc)
       print("The ACC model6 : AdaBoostClassifier",acc)
@@ -286,8 +299,65 @@ class TrainModels:
      # Entraînez le modèle de stacking
       stack_model = self.train_XGBClassifier(X_train_stack, y_train_stack)
       self.X_train_stack = X_train_stack
+      self.models = models
       return stack_model,X_test_stack, y_test_stack, model1, model2, model3, model4, model5
     
+
+    
+    def Final_get_importance(self): 
+        test_instance = Test()
+        test_instance.Keyword = self.keyword
+        test_instance.nb_url = self.df.shape[0]
+        X_train, y_train, X_test, y_test = self.oversampling_Smote()
+        print("nb ligne de trainer.df est ",self.df.shape[0])
+        stack_model, X_test_stack, y_test_stack, Model1, Model2, Model3, Model4, Model5= self.train_and_evaluate_stacking(X_train, y_train, X_test, y_test, n_folds=5)
+        auc, acc= self.eval_model(stack_model, X_test_stack, y_test_stack)
+        print(auc)
+        print("The accuracy",acc)
+        test_instance.precision = acc
+
+        df_importance = self.get_importance_level1(stack_model)
+        print(df_importance)
+        
+        # Triez le DataFrame par score en ordre décroissant
+        df_sorted = df_importance.sort_values(by='score', ascending=False)
+
+        # Obtenez le nom du modèle avec le score le plus élevé
+        best_model_name = df_sorted.iloc[0]['variable']
+
+        if best_model_name == 'Model1':
+          df_model = self.get_importance(Model1)
+        elif best_model_name == 'Model2':
+          df_model = self.get_importance(Model2)
+        elif best_model_name == 'Model3':
+          df_model = self.get_importance(Model3)
+        elif best_model_name == 'Model4':
+          df_model = self.get_importance(Model4)
+        elif best_model_name == 'Model5':
+          df_model = self.get_importance(Model5)
+        else:
+        # Gérez le cas où best_model_name n'est pas l'un des modèles connus
+         raise ValueError("Nom de modèle inconnu")
+        
+        print("Attributs de la classe Test :", dir(Test))
+
+        for variable, score in zip(df_model['variable'], df_model['score']):
+           #print(f"Variable : {variable}, Score : {score}")
+           variable_with_spaces = self.replace_underscore_with_space(variable)  # Passer variable comme argument
+           # Assurez-vous que le nom de la variable correspond à un attribut de la classe Test
+           if hasattr(test_instance, variable_with_spaces):
+              # Assurez-vous que la colonne 'variable' est une colonne valide de la classe Test
+              setattr(test_instance, variable_with_spaces, score)
+           else:
+              print(f"La variable {variable_with_spaces} n'est pas un attribut de la classe Test.")
+              
+        test_instance.date_test = timezone.now()
+        test_instance.save()
+        pd.set_option('display.max_rows', None)
+        pd.set_option('display.max_columns', None)
+        # Affichez le DataFrame
+        print(df_model)
+        return stack_model
 
      
    
@@ -357,44 +427,7 @@ class TrainModels:
 
        first_row = df_sorted.iloc[0]
        return df_sorted 
-        
-   
-
-
-   #Donne l' classement des modèles impliquer dans le ML ennsembliste par ordre croissant de leur importance
-    def Final_get_importance(self): 
-        X_train, y_train, X_test, y_test = self.oversampling_Smote()
-        stack_model, X_test_stack, y_test_stack, Model1, Model2, Model3, Model4, Model5= self.train_and_evaluate_stacking(X_train, y_train, X_test, y_test, n_folds=5)
-        auc, acc= self.eval_model(stack_model, X_test_stack, y_test_stack)
-        print(auc)
-        print("The accuracy",acc)
-
-        df_importance = self.get_importance_level1(stack_model)
-        print(df_importance)
-        
-        # Triez le DataFrame par score en ordre décroissant
-        df_sorted = df_importance.sort_values(by='score', ascending=False)
-
-        # Obtenez le nom du modèle avec le score le plus élevé
-        best_model_name = df_sorted.iloc[0]['variable']
-
-        if best_model_name == 'Model1':
-          df_model = self.get_importance(Model1)
-        elif best_model_name == 'Model2':
-          df_model = self.get_importance(Model2)
-        elif best_model_name == 'Model3':
-          df_model = self.get_importance(Model3)
-        elif best_model_name == 'Model4':
-          df_model = self.get_importance(Model4)
-        elif best_model_name == 'Model5':
-          df_model = self.get_importance(Model5)
-        else:
-        # Gérez le cas où best_model_name n'est pas l'un des modèles connus
-         raise ValueError("Nom de modèle inconnu")
-        
-        print(df_model)
-        return stack_model
-
+    
 
 
     
@@ -409,7 +442,9 @@ class TrainModels:
         print("Length of list_score:", len(list_score))
         df_scores = pd.DataFrame(data={'variable':list_col,'score':list_score})
         df_sorted = df_scores.sort_values(by=['score'],ascending=False)
+
         return df_sorted
+    
     
     def display_feature_importance(self, model_name):
         if self.models is None or not isinstance(self.models, dict):

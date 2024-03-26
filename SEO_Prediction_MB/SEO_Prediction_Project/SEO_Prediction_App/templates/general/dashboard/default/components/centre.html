@@ -1,0 +1,336 @@
+
+
+{% load static %}
+{% load sass_tags %}
+
+{% block css %}
+
+<!-- Plugins css start-->
+<style>
+  /* Votre code CSS ici */
+  .custom-input {
+      width: 800px; /* ou toute autre largeur que vous préférez */
+  }
+
+  .results-container {
+    text-align: left; /* Aligner le contenu à gauche */
+  }
+
+  .container-training {
+    text-align: left; /* Aligner le contenu à gauche */
+    margin-right: 600px;
+  }
+
+
+</style>
+<!-- Plugins css Ends-->
+{% endblock %}
+
+{% block content %}
+
+
+<!-- Boîte de dialogue -->
+<div class="modal fade" id="trainDialog" tabindex="-1" role="dialog" aria-labelledby="trainDialogLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document" style="display: flex; align-items: center;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="trainDialogLabel">Analyse</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        Une Analyse a été créée avec succès
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal" id="confirmTrainButton">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Récupérer le bouton "Train"
+    var trainButton = document.getElementById('trainButton');
+
+    // Récupérer la boîte de dialogue
+    var trainDialog = document.getElementById('trainDialog');
+
+    // Ajouter un écouteur d'événements au clic sur le bouton "Train"
+    trainButton.addEventListener('click', function(event) {
+      // Empêcher la soumission du formulaire par défaut
+      event.preventDefault();
+      // Afficher la boîte de dialogue
+      $('#trainDialog').modal('show');
+    });
+
+    // Récupérer le bouton de confirmation à l'intérieur de la boîte de dialogue
+    var confirmTrainButton = document.getElementById('confirmTrainButton');
+
+    // Ajouter un gestionnaire d'événements au clic sur le bouton "OK"
+    confirmTrainButton.addEventListener('click', function() {
+      // Masquer la boîte de dialogue
+      $('#trainDialog').modal('hide');
+    });
+  });
+</script>
+
+
+<div class="container-fluid mt-3">
+  <!-- Premier card qui occupe toute la largeur disponible -->
+  <div class="card mb-3">
+    <div class="card-header card-no-border"> 
+      <div class="row">
+        <div class="col-md-10">
+          <div class="card mx-auto" id="default">
+            <div class="card-header">
+              <h5>Enter Keyword & Train</h5>
+              <div class="card-header-right">
+                <ul class="list-unstyled card-option">
+                  <li><i class="fa fa-spin fa-cog"></i></li>
+                  <li><i class="view-html fa fa-code"></i></li>
+                  <li><i class="icofont icofont-maximize full-card"></i></li>
+                  <li><i class="icofont icofont-minus minimize-card"></i></li>
+                  <li><i class="icofont icofont-refresh reload-card"></i></li>
+                  <li><i class="icofont icofont-error close-card"></i></li>
+                </ul>
+              </div>
+            </div>
+            <div class="card-body btn-showcase">
+              <div class="container-training">
+                <div class="row justify-content-center mt-2" style="margin-bottom: 10px;">
+                  <div class="col-md-6">
+                      <form id="second-keyword-form" class="d-flex">
+                          <div class="form-group">
+                            <h1 style="font-size: 15px;">Email*</h1>
+                              <input type="text" class="form-control mr-2 custom-input" name="email" id="email-input" placeholder="email@gmail.com">
+                          </div>
+                          
+                      </form>
+                  </div>
+              </div>
+                <div class="row justify-content-center">
+                    <div class="col-md-6">
+                        <form id="keyword-form" method="post" action="{% url 'handle_keyword' %}" class="d-flex">
+                            {% csrf_token %}
+                            <div class="form-group">
+                              <h1 style="font-size: 15px;">Keyword*</h1>
+                                <input type="text" class="form-control mr-2 custom-input" name="keyword" id="keyword-input" placeholder="Your Keyword">
+                                <button id="trainButton" class="btn btn-primary" type="submit"  style="margin-left: 700px;">Train</button>
+                            </div>
+                            
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="row justify-content-center">
+                    <div class="col-md-6">
+                        <span id="error-message" class="text-danger mt-2" style="display: none;">Veuillez entrer un mot-clé.</span>
+                        <span id="error-message" class="text-danger ml-2" style="display: none;">Veuillez entrer votre adresse mail.</span>
+
+                        <script>
+                          document.addEventListener('DOMContentLoaded', function() {
+                            // Récupérer le bouton "Train"
+                            var trainButton = document.getElementById('trainButton');
+                        
+                            // Récupérer la boîte de dialogue
+                            var trainDialog = document.getElementById('trainDialog');
+                        
+                            // Récupérer le bouton de confirmation à l'intérieur de la boîte de dialogue
+                            var confirmTrainButton = document.getElementById('confirmTrainButton');
+                        
+                            // Gérer la soumission du formulaire dans la boîte de dialogue
+                            var form = document.querySelector('#keyword-form');
+                            var keywordInput = document.querySelector('#keyword-input');
+                            var errorMessage = document.querySelector('#error-message');
+                        
+                            form.addEventListener('submit', function(event) {
+                              if (!keywordInput.value.trim()) {
+                                event.preventDefault();
+                                errorMessage.style.display = 'block';
+                              } else {
+                                errorMessage.style.display = 'none';
+                              }
+                            });
+                        
+                            // Ajouter un écouteur d'événements au clic sur le bouton "Train"
+                            trainButton.addEventListener('click', function(event) {
+                              // Empêcher la soumission du formulaire par défaut
+                              event.preventDefault();
+                              // Afficher la boîte de dialogue
+                              $('#trainDialog').modal('show');
+                            });
+                        
+                            // Ajouter un gestionnaire d'événements au clic sur le bouton "OK" dans la boîte de dialogue
+                            confirmTrainButton.addEventListener('click', function() {
+                              // Masquer la boîte de dialogue
+                              $('#trainDialog').modal('hide');
+                              // Si le formulaire est valide, soumettez-le
+                              if (keywordInput.value.trim()) {
+                                form.submit();
+                              }
+                            });
+                          });
+                        </script>
+                        
+                    </div>
+                </div>
+            </div>
+            
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body pt-0">
+      <!-- Suite du contenu de votre premier card -->
+    </div>
+  </div>
+
+  <!-- Deuxième card qui conserve sa largeur par défaut -->
+  <div class="card">
+    <!-- Contenu du deuxième card -->
+  </div>
+</div>
+<div class="container-fluid mt-3">
+  <div class="card height-equal"> 
+    <div class="card-header card-no-border"> 
+      <div class="header-top">
+        <h5 id="keyword-heading">Results for Keyword </h5>
+        <script>
+          document.addEventListener('DOMContentLoaded', function() {
+            // Récupérer la valeur du mot-clé à partir de la session Django
+            var keyword = "{{ request.session.keyword }}";
+            var keywordHeading = document.getElementById('keyword-heading');
+
+            // Vérifier si le mot-clé existe avant de le mettre à jour dans l'en-tête
+            if (keyword) {
+              keywordHeading.innerText = "Results for Keyword: " + keyword;
+            }
+          });
+        </script>
+      </div>
+        <div id="results-container">
+
+          <table class="table">
+            <thead>
+                <tr>
+                    <th class="text-center">Order</th>
+                    <th class="text-center">Field</th>
+                    <th class="text-center">Value</th>
+                </tr>
+            </thead>
+            <tbody id="results-body">
+                {% if results %}
+                    {% for item in results %}
+                        <tr>
+                            <td class="text-center">{{ forloop.counter }}</td>
+                            <td class="text-center">{{ item.0 }}</td>
+                            <td class="text-center">{{ item.1 }}</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="3" class="text-center">No results found</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+          
+          
+        </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="container-fluid mt-3">
+  <div class="card height-equal"> 
+    <div class="card-header card-no-border"> 
+      <div class="header-top">
+        <h5>Importance of general variables</h5>
+      </div>
+      <div id="results-graphic-container">
+        <!-- L'histogramme Plotly sera affiché ici -->
+        <!-- Vous pouvez également ajouter une div vide pour afficher l'histogramme Plotly -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Fonction pour récupérer les données de l'histogramme depuis le backend
+    function getBarPlotData() {
+      fetch('/handle_keyword/')  
+        .then(response => response.json())
+        .then(data => {
+          // Créer l'histogramme Plotly
+          var plotData = JSON.parse(data.plot_data);
+          Plotly.newPlot('results-graphic-container', plotData.data, plotData.layout);
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    // Appeler la fonction pour obtenir les données de l'histogramme
+    getBarPlotData();
+  });
+</script>
+
+
+<div class="container-fluid mt-3">
+  <div class="card height-equal"> 
+    <div class="card-header card-no-border"> 
+      <div class="header-top">
+        <h5 style="margin-bottom: 15px;">Explanation of variables</h5>
+      </div>
+        <div id="explanation_container">
+          
+           <!-- Bouton 1 -->
+           <button class="btn btn-light rounded-pill mx-2 explanation-button" data-text="Texte 1"> High importance</button>
+           <!-- Bouton 2 -->
+           <button class="btn btn-light rounded-pill mx-2 explanation-button" data-text="Texte 2">Medium importance</button>
+           <!-- Bouton 3 -->
+           <button class="btn btn-light rounded-pill mx-2 explanation-button" data-text="Texte 3">Low importance</button>
+
+        </div>
+
+        <div id="graphic_container">
+
+        </div>
+        <script>
+          document.addEventListener('DOMContentLoaded', function() {
+            const explanationButtons = document.querySelectorAll('.explanation-button');
+        
+            explanationButtons.forEach(button => {
+              button.addEventListener('click', function() {
+                // Changer la couleur des boutons
+                explanationButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+        
+                // Afficher le texte approprié
+                const textToShow = this.getAttribute('data-text');
+                document.getElementById('graphic_container').innerText = textToShow;
+              });
+            });
+          });
+        </script>
+    </div>
+  </div>
+</div>
+</div>
+<div class="col-xxl-4 col-xl-5 col-md-6 col-sm-7 notification box-col-6">
+</div>
+<div class="col-xxl-4 col-md-6 appointment-sec box-col-6">
+  
+</div>
+<div class="col-xxl-4 col-md-6 box-col-6">
+  
+</div>
+
+
+
+
+{% endblock %}

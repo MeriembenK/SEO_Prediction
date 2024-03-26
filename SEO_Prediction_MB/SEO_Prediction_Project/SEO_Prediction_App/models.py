@@ -19,6 +19,7 @@ class Keyword(models.Model):
 class Data(models.Model):
     
     Thekeyword = models.CharField(max_length=2150, null=True)  # Champ pour Keyword
+    Keyword = models.CharField(max_length=150, null=True) # champ pour Keyword principale
     Position = models.PositiveIntegerField(null=True)  # Champ pour la position
     Url = models.CharField(max_length=200, null=True)  # Champ pour l'URL
     Top10 = models.BooleanField(null=True)  # Champ pour Top 10 (0 ou 1)
@@ -165,10 +166,101 @@ class Data(models.Model):
                            'Redirect_type', 'Cookies', 'HTTP_Version', 'URL_Encoded_Address', 'Crawl_Timestamp','Errors', 'Warnings', 'Total_Types', 'Unique_Types', 'Type_1',
                            'Indexability_y', 'Indexability_Status_y', 'Title1_score', 'Meta_Description1_score', 'Meta_Description1_score', 'Meta_Keywords1_score',
                            'Meta_Keywords1_score', 'Meta_Keywords1_score', 'H1_1_score', 'H1_2_score', 'H2_1_score', 'H2_2_score', 'Meta_Robots_1_score', 'Url_Score']
+class Test(models.Model):
+    Keyword = models.CharField(max_length=250, null=True) #keyword
+    nb_url =  models.FloatField(null=True) #nb_url
+    precision =  models.FloatField(null=True) # précision
+    Ttfb_babbar_score = models.FloatField(null=True) # Ttfb_babbar_score
+    Page_value_babbar_score = models.FloatField(null=True) # Page_value_babbar_score
+    Page_trust_babbar_score = models.FloatField(null=True) # Page_trust_babbar_score
+    Semantic_value_babbar_score = models.FloatField(null=True) # Semantic_value_babbar_score
+    Backlinks_babbar_score = models.FloatField(null=True) # Backlinks_babbar_score
+    Backlinks_host_babbar_score = models.FloatField(null=True) # Backlinks_host_babbar_score
+    Host_outlinks_babbar_score = models.FloatField(null=True) # Host_outlinks_babbar_score
+    Outlinks_babbar_score = models.FloatField(null=True) # Outlinks_babbar_score
+    Desktop_first_contentful_paint_terrain_score = models.FloatField(null=True) # Desktop_first_contentful_paint_terrain_score
+    Desktop_first_input_delay_terain_score = models.FloatField(null=True) # Desktop_first_input_delay_terain_score
+    Desktop_largest_contentful_paint_terrain_score = models.FloatField(null=True) # Desktop_largest_contentful_paint_terrain_score
+    Desktop_cumulative_layout_shift_terrain_score = models.FloatField(null=True) # Desktop_cumulative_layout_shift_terrain_score
+    Desktop_first_contentful_paint_lab_score = models.FloatField(null=True) # Desktop_first_contentful_paint_lab_score
+    Desktop_speed_index_lab_score = models.FloatField(null=True) # Desktop_speed_index_lab_score
+    Desktop_largest_contentful_paint_lab_score = models.FloatField(null=True) # Desktop_largest_contentful_paint_lab_score
+    Desktop_time_to_interactive_lab_score = models.FloatField(null=True) # Desktop_time_to_interactive_lab_score
+    Desktop_total_blocking_time_lab_score = models.FloatField(null=True) # Desktop_total_blocking_time_lab_score
+    Desktop_cumulative_layout_shift_lab_score = models.FloatField(null=True) # Desktop_cumulative_layout_shift_lab_score
+    Mobile_first_contentful_paint_terrain_score = models.FloatField(null=True) # Mobile_first_contentful_paint_terrain_score
+    Mobile_first_input_delay_terain_score = models.FloatField(null=True) # Mobile_first_input_delay_terain_score
+    Mobile_largest_contentful_paint_terrain_score = models.FloatField(null=True) # Mobile_largest_contentful_paint_terrain_score
+    Mobile_cumulative_layout_shift_terrain_score = models.FloatField(null=True) # Mobile_cumulative_layout_shift_terrain_score
+    Mobile_first_contentful_paint_lab_score = models.FloatField(null=True) # Mobile_first_contentful_paint_lab_score
+    Mobile_speed_index_lab_score = models.FloatField(null=True) # Mobile_speed_index_lab_score
+    Mobile_largest_contentful_paint_lab_score = models.FloatField(null=True) # Mobile_largest_contentful_paint_lab_score
+    Mobile_time_to_interactive_lab_score = models.FloatField(null=True) # Mobile_time_to_interactive_lab_score
+    Mobile_total_blocking_time_lab_score = models.FloatField(null=True) # Mobile_total_blocking_time_lab_score
+    Mobile_cumulative_layout_shift_lab_score = models.FloatField(null=True) # Mobile_cumulative_layout_shift_lab_score
+    SOSEO_yourtext_guru_score = models.FloatField(null=True) # SOSEO_yourtext_guru_score
+    DSEO_yourtext_guru_score = models.FloatField(null=True) # DSEO_yourtext_guru_score
+    Score_1fr_score = models.FloatField(null=True) # Score_1fr_score
+    Title1_score = models.FloatField(null=True) # Title1_score
+    Title1_length_score = models.FloatField(null=True) # Title1_length_score
+    Title1_pixel_width_score = models.FloatField(null=True) # Title1_pixel_width_score
+    Title2_score = models.FloatField(null=True) # Title2_score
+    Title2_length_score = models.FloatField(null=True) # Title2_length_score
+    Title2_pixel_width_score = models.FloatField(null=True) # Title2_pixel_width_score
+    Meta_description1_score = models.FloatField(null=True) # Meta_description1_score
+    Meta_description1_length_score = models.FloatField(null=True) # Meta_description1_length_score
+    Meta_description1_Pixel_width_score = models.FloatField(null=True) # Meta_description1_Pixel_width_score
+    Meta_description2_score = models.FloatField(null=True) #  Meta_description2_score
+    Meta_description2_length_score = models.FloatField(null=True) # Meta_description2_length_score
+    Meta_description2_Pixel_width_score = models.FloatField(null=True) # Meta_description2_Pixel_width_score
+    Meta_Keywords1_score = models.FloatField(null=True) # Meta_Keywords1_score
+    Meta_keywords1_length_score = models.FloatField(null=True) # Meta_keywords1_length_score
+    H1_1_score = models.FloatField(null=True) # H1_1_score
+    H1_1_length_score = models.FloatField(null=True) # H1_1_length_score
+    H1_2_score = models.FloatField(null=True) # H1_2_score
+    H1_2_length_score = models.FloatField(null=True) # H1_2_length_score
+    H2_1_score = models.FloatField(null=True) # H2_1_score
+    H2_1_length_score = models.FloatField(null=True) # H2_1_length_score
+    H2_2_score = models.FloatField(null=True) # H2_2_score
+    H2_2_length_score = models.FloatField(null=True) # H2_2_length_score
+    Meta_robots_1_score = models.FloatField(null=True) # Meta_robots_1_score
+    Meta_robots_2_score = models.FloatField(null=True) # Meta_robots_2_score
+    Meta_robots_3_score = models.FloatField(null=True) # Meta_robots_3_score
+    Canonical_link_element2_score = models.FloatField(null=True) # Canonical_link_element2_score
+    Size_bytes_score = models.FloatField(null=True) # Size_bytes_score
+    Word_count_score = models.FloatField(null=True) # Word_count_score
+    Sentence_Count_score = models.FloatField(null=True) # Sentence_Count_score
+    Average_words_per_sentence_score = models.FloatField(null=True) # Average_words_per_sentence_score
+    Flesch_reading_ease_score_score = models.FloatField(null=True) # Flesch_reading_ease_score_score
+    Text_ratio_score = models.FloatField(null=True) # Text_ratio_score
+    Crawl_depth_score = models.FloatField(null=True) # Crawl_depth_score
+    Inlinks_score = models.FloatField(null=True) # Inlinks_score
+    Unique_inlinks_score = models.FloatField(null=True) # Unique_inlinks_score
+    Unique_JS_inlinks_score = models.FloatField(null=True) # Unique_JS_inlinks_score
+    of_Total_score = models.FloatField(null=True) # of_Total_score
+    Outlinks_score = models.FloatField(null=True) # Outlinks_score
+    Unique_Outlinks_score = models.FloatField(null=True) # Unique_Outlinks_score
+    Unique_JS_Outlinks_score = models.FloatField(null=True) # Unique_JS_Outlinks_score
+    External_Outlinks_score = models.FloatField(null=True) # External_Outlinks_score
+    Unique_External_Outlinks_score = models.FloatField(null=True) # Unique_External_Outlinks_score
+    Unique_External_JS_Outlinks_score = models.FloatField(null=True) # Unique_External_JS_Outlinks_score
+    Response_time_score = models.FloatField(null=True) # Response_time_score
+    Errors_score = models.FloatField(null=True) # Errors_score
+    Warnings_score = models.FloatField(null=True) # Warnings_score
+    Total_Types_score = models.FloatField(null=True) # Total_Types_score
+    Unique_Types_score = models.FloatField(null=True) # Unique_Types_score
+    Title1_score_score = models.FloatField(null=True) # Title1_score_score
+    Meta_Description1_score_score = models.FloatField(null=True) # Meta_Description1_score_score
+    Meta_Keywords1_score_score = models.FloatField(null=True) # Meta_Keywords1_score_score
+    H1_1_score_score = models.FloatField(null=True) # H1_1_score_score
+    H1_2_score_score = models.FloatField(null=True) # H1_2_score_score
+    H2_1_score_score = models.FloatField(null=True) # H2_1_score_score
+    H2_2_score_score = models.FloatField(null=True) # H2_2_score_score
+    date_test = models.DateField(null=True)
 
 class Data_Url(models.Model):
     
-    Thekeyword = models.CharField(max_length=2150, null=True)  # Champ pour Keyword
+    Thekeyword = models.CharField(max_length=150, null=True)  # Champ pour Keyword
     #Position = models.PositiveIntegerField(null=True)  # Champ pour la position
     Url = models.CharField(max_length=200, null=True)  # Champ pour l'URL
     Top10 = models.BooleanField(null=True)  # Champ pour Top 10 (0 ou 1)
@@ -297,3 +389,13 @@ class Data_Url(models.Model):
 
 class Keyword_Url(models.Model):
     Keyword_url = models.CharField(max_length=255, null=True)
+
+
+
+
+
+
+    
+
+
+

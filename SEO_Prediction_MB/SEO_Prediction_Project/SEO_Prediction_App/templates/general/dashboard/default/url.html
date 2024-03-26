@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% load sass_tags %}
+
+{% block css %}
+<!-- Plugins css start-->
+
+<!-- Plugins css Ends-->
+{% endblock %}
+
+{% block content %}
+
+
+<div class="page-body">
+    <div class="container-fluid">
+        {% include "layout/breadcrumb.html" %}
+        <div class="message-container">
+            {% if message %}
+                <p>{{ message }}</p>
+            {% else %}
+                <p>Aucun message à afficher pour le message principal</p>
+            {% endif %}
+        </div>
+
+        <div class="message-container">
+            {% if text %}
+                <p>{{ text }}</p>
+            {% else %}
+                <p>Aucun message à afficher pour le message secondaire</p>
+            {% endif %}
+        </div>
+
+        <div class="header">
+            {% if user_name %}
+                <p>Bonjour, {{ user_name }}</p>
+            {% else %}
+                <p>Bonjour, invité</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock %}
+
+{% block scriptcontent %}
+<script src="{% static 'assets/js/clock.js'%}"></script>
+<script src="{% static 'assets/js/chart/apex-chart/apex-chart.js'%}"></script>
+<script src="{% static 'assets/js/chart/apex-chart/stock-prices.js'%}"></script>
+<script src="{% static 'assets/js/chart/apex-chart/moment.min.js'%}"></script>
+<script src="{% static 'assets/js/notify/bootstrap-notify.min.js'%}"></script>
+<script  src="{% static 'assets/js/dashboard/default.js' %}"></script>
+<script src="{% static 'assets/js/notify/index.js'%}"></script>
+<script src="{% static 'assets/js/typeahead/handlebars.js'%}"></script>
+<script src="{% static 'assets/js/typeahead/typeahead.bundle.js'%}"></script>
+<script src="{% static 'assets/js/typeahead/typeahead.custom.js'%}"></script>
+<script src="{% static 'assets/js/typeahead-search/handlebars.js'%}"></script>
+<script src="{% static 'assets/js/typeahead-search/typeahead-custom.js'%}"></script>
+<script src="{% static 'assets/js/height-equal.js'%}"></script>
+<script src="{% static 'assets/js/animation/wow/wow.min.js'%}"></script>
+<!-- Plugins JS start-->
+<!-- Plugins JS Ends-->
+{% endblock %}
+{% block script %} 
+<script>new WOW().init();</script>
+{% endblock %}

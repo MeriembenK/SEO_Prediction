@@ -36,7 +36,7 @@ class UrlPredect:
     @staticmethod
     def exclude_and_convert_columns(data_frame):
         # Colonnes à exclure
-        colonnes_exclues = ['id','Position', 'Url_Score', 'HTTP_Version', 'Http_code_babbar', 'Content_type',
+        colonnes_exclues = ['id','Position', 'Keyword','Url_Score', 'HTTP_Version', 'Http_code_babbar', 'Content_type',
                             'Status_code', 'Status', 'Indexability_x', 'Indexability_status_x', 'X_robots_tag1',
                             'Meta_Robots_1_score', 'Meta_Refresh_1', 'Canonical_link_element1', 'rel_next_1', 'rel_prev_1',
                             'HTTP_rel_next_1', 'HTTP_rel_prev_1', 'amphtml_link_element', 'Readability', 'Link_score',
