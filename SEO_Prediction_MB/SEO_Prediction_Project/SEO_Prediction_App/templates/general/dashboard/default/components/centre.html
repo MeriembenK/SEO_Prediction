@@ -1,35 +1,60 @@
-
-
 {% load static %}
 {% load sass_tags %}
 
-{% block css %}
+<!DOCTYPE html>
+<html lang="en">
 
-<!-- Plugins css start-->
-<style>
-  /* Votre code CSS ici */
-  .custom-input {
-      width: 800px; /* ou toute autre largeur que vous préférez */
-  }
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votre titre</title>
+    <!-- Inclure Plotly CDN ici -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="validator.js"></script>
+    <!-- Vos autres balises <link> et <style> peuvent également être incluses ici -->
+    {% block css %}
+    <!-- Plugins css start-->
+    <style>
+        
+        /* Votre code CSS ici */
+        .custom-input {
+            width: 800px; /* ou toute autre largeur que vous préférez */
+        }
 
-  .results-container {
-    text-align: left; /* Aligner le contenu à gauche */
-  }
+        .results-container {
+            text-align: left; /* Aligner le contenu à gauche */
+            display: block;
+            min-height: 60px; /* Hauteur minimale */
+            height: 200px; /* Hauteur fixe */
+            overflow-y: auto;
+            overflow: hidden;
+            transition: max-height 0.3s ease; /* Animation de transition */
+        }
 
-  .container-training {
-    text-align: left; /* Aligner le contenu à gauche */
-    margin-right: 600px;
-  }
+        .importance-container {
+            text-align: left; /* Aligner le contenu à gauche */
+            display: block;
+            max-height: 50px; /* Taille minimale */
+            overflow: hidden;
+            transition: max-height 0.3s ease; /* Animation de transition */
+        }
 
+        .results-graphic-container {
+            min-height: 60px; /* Hauteur minimale */
+        }
+        
+        
+    </style>
+    
+    
+    <!-- Plugins css Ends-->
+    {% endblock %}
+</head>
 
-</style>
-<!-- Plugins css Ends-->
-{% endblock %}
+<body>
 
-{% block content %}
-
-
-<!-- Boîte de dialogue -->
+    {% block content %}
+ <!-- Boîte de dialogue -->
 <div class="modal fade" id="trainDialog" tabindex="-1" role="dialog" aria-labelledby="trainDialogLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document" style="display: flex; align-items: center;">
     <div class="modal-content">
@@ -80,114 +105,110 @@
 <div class="container-fluid mt-3">
   <!-- Premier card qui occupe toute la largeur disponible -->
   <div class="card mb-3">
-    <div class="card-header card-no-border"> 
-      <div class="row">
-        <div class="col-md-10">
-          <div class="card mx-auto" id="default">
-            <div class="card-header">
-              <h5>Enter Keyword & Train</h5>
-              <div class="card-header-right">
-                <ul class="list-unstyled card-option">
-                  <li><i class="fa fa-spin fa-cog"></i></li>
-                  <li><i class="view-html fa fa-code"></i></li>
-                  <li><i class="icofont icofont-maximize full-card"></i></li>
-                  <li><i class="icofont icofont-minus minimize-card"></i></li>
-                  <li><i class="icofont icofont-refresh reload-card"></i></li>
-                  <li><i class="icofont icofont-error close-card"></i></li>
-                </ul>
-              </div>
-            </div>
-            <div class="card-body btn-showcase">
-              <div class="container-training">
-                <div class="row justify-content-center mt-2" style="margin-bottom: 10px;">
-                  <div class="col-md-6">
-                      <form id="second-keyword-form" class="d-flex">
-                          <div class="form-group">
-                            <h1 style="font-size: 15px;">Email*</h1>
-                              <input type="text" class="form-control mr-2 custom-input" name="email" id="email-input" placeholder="email@gmail.com">
+      <div class="card-header card-no-border">
+          <div class="row">
+              <div class="col-md-10">
+                  <div class="card mx-auto" id="default">
+                      <div class="card-header">
+                          <h5>Enter Keyword & Train</h5>
+                          <div class="card-header-right">
+                              <ul class="list-unstyled card-option">
+                                  <li><i class="fa fa-spin fa-cog"></i></li>
+                                  <li><i class="view-html fa fa-code"></i></li>
+                                  <li><i class="icofont icofont-maximize full-card"></i></li>
+                                  <li><i class="icofont icofont-minus minimize-card"></i></li>
+                                  <li><i class="icofont icofont-refresh reload-card"></i></li>
+                                  <li><i class="icofont icofont-error close-card"></i></li>
+                              </ul>
                           </div>
-                          
-                      </form>
+                      </div>
+                      <div class="card-body btn-showcase">
+                          <div class="container-training">
+                            <div class="row justify-content-center mt-2" style="margin-bottom: 10px;">
+                              <div class="col-md-6">
+                                  <form id="keyword-form" method="post" action="{% url 'handle_keyword' %}" class="d-flex flex-column">
+                                      {% csrf_token %}
+                                      <div class="form-group">
+                                          <h1 style="font-size: 15px;">Email*</h1>
+                                          <input type="text" class="form-control custom-input" name="email" id="email-input" placeholder="email@gmail.com" value="{{ request.session.email }}" required>
+                                      </div>
+                                      <div class="form-group">
+                                          <h1 style="font-size: 15px;">Keyword*</h1>
+                                          <input type="text" class="form-control custom-input" name="keyword" id="keyword-input" placeholder="Your Keyword" value="{{ request.session.keyword }}" required>
+                                          <button id="trainButton" class="btn btn-primary" type="submit"  style="margin-left: 700px;">Train</button>
+                                      </div>
+                                      >
+                                  </form>
+                              </div>
+                          </div>
+
+                              <div class="row justify-content-center">
+                                  <div class="col-md-6">
+                                      <span id="error-message" class="text-danger mt-2" style="display: none;">Veuillez entrer un mot-clé.</span>
+                                      <span id="error-message" class="text-danger ml-2" style="display: none;">Veuillez entrer votre adresse mail.</span>
+
+                                      <script>
+                                          document.addEventListener('DOMContentLoaded', function() {
+                                              // Récupérer le bouton "Train"
+                                              var trainButton = document.getElementById('trainButton');
+
+                                              // Récupérer la boîte de dialogue
+                                              var trainDialog = document.getElementById('trainDialog');
+
+                                              // Récupérer le bouton de confirmation à l'intérieur de la boîte de dialogue
+                                              var confirmTrainButton = document.getElementById('confirmTrainButton');
+
+                                              // Gérer la soumission du formulaire dans la boîte de dialogue
+                                              var form = document.querySelector('#keyword-form');
+                                              var keywordInput = document.querySelector('#keyword-input');
+                                              var emailInput = document.querySelector('#email-input');
+                                              var errorMessage = document.querySelector('#error-message');
+
+
+                                              form.addEventListener('submit', function(event) {
+                                                  if (!keywordInput.value.trim()) {
+                                                      event.preventDefault();
+                                                      errorMessage.style.display = 'block';
+                                                  } else if (!emailInput.value.trim()) {
+                                                      event.preventDefault();
+                                                      errorMessage.style.display = 'block';
+                                                  } else {
+                                                      errorMessage.style.display = 'none';
+                                                  }
+                                              });
+
+                                              // Ajouter un écouteur d'événements au clic sur le bouton "Train"
+                                              trainButton.addEventListener('click', function(event) {
+                                                  // Empêcher la soumission du formulaire par défaut
+                                                  event.preventDefault();
+                                                  // Afficher la boîte de dialogue
+                                                  $('#trainDialog').modal('show');
+                                              });
+
+                                              // Ajouter un gestionnaire d'événements au clic sur le bouton "OK" dans la boîte de dialogue
+                                              confirmTrainButton.addEventListener('click', function() {
+                                                  // Masquer la boîte de dialogue
+                                                  $('#trainDialog').modal('hide');
+                                                  // Si le formulaire est valide, soumettez-le
+                                                  if (keywordInput.value.trim()) {
+                                                      form.submit();
+                                                  }
+                                              });
+                                          });
+                                      </script>
+
+                                  </div>
+                              </div>
+                          </div>
+
+                      </div>
                   </div>
               </div>
-                <div class="row justify-content-center">
-                    <div class="col-md-6">
-                        <form id="keyword-form" method="post" action="{% url 'handle_keyword' %}" class="d-flex">
-                            {% csrf_token %}
-                            <div class="form-group">
-                              <h1 style="font-size: 15px;">Keyword*</h1>
-                                <input type="text" class="form-control mr-2 custom-input" name="keyword" id="keyword-input" placeholder="Your Keyword">
-                                <button id="trainButton" class="btn btn-primary" type="submit"  style="margin-left: 700px;">Train</button>
-                            </div>
-                            
-                        </form>
-                    </div>
-                </div>
-                
-                <div class="row justify-content-center">
-                    <div class="col-md-6">
-                        <span id="error-message" class="text-danger mt-2" style="display: none;">Veuillez entrer un mot-clé.</span>
-                        <span id="error-message" class="text-danger ml-2" style="display: none;">Veuillez entrer votre adresse mail.</span>
-
-                        <script>
-                          document.addEventListener('DOMContentLoaded', function() {
-                            // Récupérer le bouton "Train"
-                            var trainButton = document.getElementById('trainButton');
-                        
-                            // Récupérer la boîte de dialogue
-                            var trainDialog = document.getElementById('trainDialog');
-                        
-                            // Récupérer le bouton de confirmation à l'intérieur de la boîte de dialogue
-                            var confirmTrainButton = document.getElementById('confirmTrainButton');
-                        
-                            // Gérer la soumission du formulaire dans la boîte de dialogue
-                            var form = document.querySelector('#keyword-form');
-                            var keywordInput = document.querySelector('#keyword-input');
-                            var errorMessage = document.querySelector('#error-message');
-                        
-                            form.addEventListener('submit', function(event) {
-                              if (!keywordInput.value.trim()) {
-                                event.preventDefault();
-                                errorMessage.style.display = 'block';
-                              } else {
-                                errorMessage.style.display = 'none';
-                              }
-                            });
-                        
-                            // Ajouter un écouteur d'événements au clic sur le bouton "Train"
-                            trainButton.addEventListener('click', function(event) {
-                              // Empêcher la soumission du formulaire par défaut
-                              event.preventDefault();
-                              // Afficher la boîte de dialogue
-                              $('#trainDialog').modal('show');
-                            });
-                        
-                            // Ajouter un gestionnaire d'événements au clic sur le bouton "OK" dans la boîte de dialogue
-                            confirmTrainButton.addEventListener('click', function() {
-                              // Masquer la boîte de dialogue
-                              $('#trainDialog').modal('hide');
-                              // Si le formulaire est valide, soumettez-le
-                              if (keywordInput.value.trim()) {
-                                form.submit();
-                              }
-                            });
-                          });
-                        </script>
-                        
-                    </div>
-                </div>
-            </div>
-            
-            </div>
           </div>
-          </div>
-        </div>
       </div>
-    </div>
-    <div class="card-body pt-0">
-      <!-- Suite du contenu de votre premier card -->
-    </div>
   </div>
+
+
 
   <!-- Deuxième card qui conserve sa largeur par défaut -->
   <div class="card">
@@ -212,125 +233,236 @@
           });
         </script>
       </div>
-        <div id="results-container">
 
-          <table class="table">
-            <thead>
-                <tr>
+
+      <div class="container-fluid mt-3">
+        <div class="card height-equal"> 
+          <div class="card-header card-no-border"> 
+            <div class="header-top" style="max-height: 60px;">
+              <h5 id="indicators-title">Table des indicateurs</h5>
+            </div>
+            <div id="results-container" class="results-container" style="height: 800px;">
+              <table class="table">
+                <thead>
+                  <tr>
                     <th class="text-center">Order</th>
                     <th class="text-center">Field</th>
                     <th class="text-center">Value</th>
-                </tr>
-            </thead>
-            <tbody id="results-body">
-                {% if results %}
-                    {% for item in results %}
-                        <tr>
-                            <td class="text-center">{{ forloop.counter }}</td>
-                            <td class="text-center">{{ item.0 }}</td>
-                            <td class="text-center">{{ item.1 }}</td>
-                        </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="3" class="text-center">No results found</td>
-                    </tr>
-                {% endif %}
-            </tbody>
-        </table>
-          
-          
+                    <th class="text-center">Min-Max</th>
+                  </tr>
+                </thead>
+                <tbody id="results-body">
+                  {% if results_with_min_max %}
+                    {% for item_tuple in results_with_min_max %}
+                          <tr>
+                              <td class="text-center">{{ forloop.counter }}</td>
+                              <td class="text-center">{{ item_tuple.0 }}</td>
+                              <td class="text-center">{{ item_tuple.1 }}</td>
+                              <td class="text-center">{{ item_tuple.2 }}</td>
+                          </tr>
+                      {% endfor %}
+                  {% else %}
+                      <tr>
+                          <td colspan="4" class="text-center">No results found</td>
+                      </tr>
+                  {% endif %}
+              </tbody>
+              
+              </table>
+            </div>
+          </div>
         </div>
-    </div>
-  </div>
-</div>
-
-
-<div class="container-fluid mt-3">
-  <div class="card height-equal"> 
-    <div class="card-header card-no-border"> 
-      <div class="header-top">
-        <h5>Importance of general variables</h5>
       </div>
-      <div id="results-graphic-container">
-        <!-- L'histogramme Plotly sera affiché ici -->
-        <!-- Vous pouvez également ajouter une div vide pour afficher l'histogramme Plotly -->
-      </div>
-    </div>
-  </div>
-</div>
+      
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+    var resultsTable = document.getElementById('results-body');
+    var rows = resultsTable.getElementsByTagName('tr');
 
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Fonction pour récupérer les données de l'histogramme depuis le backend
-    function getBarPlotData() {
-      fetch('/handle_keyword/')  
-        .then(response => response.json())
-        .then(data => {
-          // Créer l'histogramme Plotly
-          var plotData = JSON.parse(data.plot_data);
-          Plotly.newPlot('results-graphic-container', plotData.data, plotData.layout);
-        })
-        .catch(error => console.error('Error:', error));
+    // Vérifier si des résultats sont disponibles
+    if (rows.length > 0) {
+        var xAxisData = [];
+        var yAxisData = [];
+
+        // Collecter les données de la table
+        for (var i = 0; i < rows.length; i++) {
+            var cells = rows[i].getElementsByTagName('td');
+            if (cells.length === 4) { // Vérifier si le nombre de colonnes est de 4 (sans Min_Max)
+                var fieldName = cells[1].innerText; // Champ
+                // Exclure les champs 'id', 'nb_url' et 'precision' et les valeurs 'Min_Max'
+                if (fieldName !== 'id' && fieldName !== 'nb url' && fieldName !== 'precision') {
+                    xAxisData.push(fieldName);
+                    yAxisData.push(parseFloat(cells[2].innerText)); // Valeur
+                }
+            }
+        }
+
+        // Options du graphique ApexChart
+        var options = {
+            chart: {
+                type: 'bar',
+                height: 350,
+            },
+            series: [{
+                name: 'Values',
+                data: yAxisData
+            }],
+            xaxis: {
+                categories: xAxisData
+            }
+        };
+
+        // Créer une instance de ApexCharts et rendre le graphique
+        var chart = new ApexCharts(document.querySelector("#results-graphic-container"), options);
+        chart.render();
+
+        // Définir une hauteur fixe pour le conteneur du graphique
+        document.querySelector('#results-graphic-container').style.height = '350px';
+
+        // Afficher le conteneur du graphique
+        document.querySelector('.results-graphic-container').style.display = 'block';
+
     }
+});
+        
+      </script>
+      
+      <div class="container-fluid mt-3 explanation-graphic-container">
+        <div class="card height-equal"> 
+          <div class="card-header card-no-border"> 
+            <div class="header-top">
+              <h5>Importance of general variables</h5>
+            </div>
+            <div id="results-graphic-container" style="max-height: 1000px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    // Appeler la fonction pour obtenir les données de l'histogramme
-    getBarPlotData();
-  });
-</script>
+<div class="row">
+  <!-- Première colonne pour les deux premiers graphiques -->
+  <div class="col-md-6">
+    <div id="chart1" class="chart-container"></div>
+  </div>
+  <!-- Deuxième colonne pour les deux derniers graphiques -->
+  <div class="col-md-6">
+    <div id="chart2" class="chart-container"></div>
+  </div>
+</div>
 
+</div>
 
 <div class="container-fluid mt-3">
-  <div class="card height-equal"> 
+  <div class="card height-equal importance-container"> 
     <div class="card-header card-no-border"> 
       <div class="header-top">
         <h5 style="margin-bottom: 15px;">Explanation of variables</h5>
       </div>
-        <div id="explanation_container">
-          
-           <!-- Bouton 1 -->
-           <button class="btn btn-light rounded-pill mx-2 explanation-button" data-text="Texte 1"> High importance</button>
-           <!-- Bouton 2 -->
-           <button class="btn btn-light rounded-pill mx-2 explanation-button" data-text="Texte 2">Medium importance</button>
-           <!-- Bouton 3 -->
-           <button class="btn btn-light rounded-pill mx-2 explanation-button" data-text="Texte 3">Low importance</button>
+      <div id="explanation_container" style="min-width: 800px;">
+        <!-- Bouton 1 -->
+        <button class="btn btn-light rounded-pill mx-2 explanation-button active" data-start="0" data-end="3"> High importance</button>
+        <!-- Bouton 2 -->
+        <button class="btn btn-light rounded-pill mx-2 explanation-button" data-start="4" data-end="7">Medium importance</button>
+        <!-- Bouton 3 -->
+        <button class="btn btn-light rounded-pill mx-2 explanation-button" data-start="8" data-end="11">Low importance</button>
+      </div>
 
-        </div>
+      <div class="row" id="charts-row">
+        <!-- Cet élément sera rempli avec des graphiques par JavaScript -->
+      </div>
 
-        <div id="graphic_container">
+      <div id="graphic_container">
+      </div>
 
-        </div>
-        <script>
-          document.addEventListener('DOMContentLoaded', function() {
-            const explanationButtons = document.querySelectorAll('.explanation-button');
-        
-            explanationButtons.forEach(button => {
-              button.addEventListener('click', function() {
-                // Changer la couleur des boutons
-                explanationButtons.forEach(btn => btn.classList.remove('active'));
-                this.classList.add('active');
-        
-                // Afficher le texte approprié
-                const textToShow = this.getAttribute('data-text');
-                document.getElementById('graphic_container').innerText = textToShow;
-              });
-            });
-          });
-        </script>
+      <script>
+    document.addEventListener('DOMContentLoaded', function() {
+  // Récupérer les boutons d'explication
+  const explanationButtons = document.querySelectorAll('.explanation-button');
+
+  // Parcourir les boutons d'explication
+  explanationButtons.forEach(button => {
+    // Ajouter un écouteur d'événements pour chaque bouton
+    button.addEventListener('click', function() {
+      // Changer la couleur des boutons
+      explanationButtons.forEach(btn => btn.classList.remove('active'));
+      this.classList.add('active');
+
+      // Afficher les graphiques correspondants
+      const start = parseInt(this.getAttribute('data-start'));
+      const end = parseInt(this.getAttribute('data-end'));
+      let dataForCharts = JSON.parse('{{ data_for_charts_json|escapejs }}').slice(start, end + 1);
+
+      // Filtrer les valeurs NaN des données avant de les afficher
+      dataForCharts = dataForCharts.map(data => ({
+        ...data,
+        yes: data.yes.filter(value => !isNaN(value)),
+        no: data.no.filter(value => !isNaN(value))
+      }));
+
+      document.getElementById('charts-row').innerHTML = ''; // Effacer les anciens graphiques
+
+      dataForCharts.forEach(function(data) {
+        const options = {
+          series: [
+            {
+              name: "Yes",
+              data: data.yes
+            },
+            {
+              name: "No",
+              data: data.no
+            }
+          ],
+          chart: {
+            type: 'line',
+            height: 300, // Ajustez la hauteur des graphiques ici
+            width: '100%' // Pour que les graphiques s'adaptent à la largeur du conteneur
+          },
+          title: {
+            text: 'Valeurs de l\'attribut ' + data.attribut
+          },
+          xaxis: {
+            categories: Array.from({ length: data.yes.length }, (_, i) => i + 1),
+            labels: {
+              formatter: function(val) {
+                return ''; // Supprimer les labels de l'axe x
+              }
+            }
+          },
+          yaxis: {
+            labels: {
+              formatter: function(val) {
+                return val.toFixed(2); // Afficher seulement 2 chiffres après la virgule dans l'axe y
+              }
+            }
+          }
+        };
+
+        const chartContainer = document.createElement('div');
+        chartContainer.classList.add('col-md-6', 'mb-3');
+        const chartId = 'chart-' + data.attribut;
+        chartContainer.setAttribute('id', chartId);
+        document.getElementById('charts-row').appendChild(chartContainer);
+
+        const chart = new ApexCharts(document.getElementById(chartId), options);
+        chart.render();
+      });
+    });
+  });
+
+  // Simuler le clic sur le bouton "High importance" au chargement de la page
+  const highImportanceButton = document.querySelector('.explanation-button[data-start="0"]');
+  highImportanceButton.click();
+});
+
+
+      </script>
     </div>
   </div>
 </div>
-</div>
-<div class="col-xxl-4 col-xl-5 col-md-6 col-sm-7 notification box-col-6">
-</div>
-<div class="col-xxl-4 col-md-6 appointment-sec box-col-6">
-  
-</div>
-<div class="col-xxl-4 col-md-6 box-col-6">
-  
-</div>
 
+    {% endblock %}
 
+</body>
 
-
-{% endblock %}
+</html>

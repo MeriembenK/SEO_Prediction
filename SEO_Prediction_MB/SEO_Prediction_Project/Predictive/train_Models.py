@@ -37,7 +37,7 @@ class TrainModels:
 
     #Lecture de la data depuis la BDD, en ignorant certaines colonnes, en faisant la conversion de certaines colonne de type object au type float et gestion des colonnes catégoriques
     def read_my_data(self):
-        colonnes_exclues = ['id','Keyword','Position','Url_Score', 'HTTP_Version','Http_code_babbar','Thekeyword','Url','Content_type','Status_code','Status','Indexability_x','Indexability_status_x'
+        colonnes_exclues = ['id','Keyword', "Thekeyword",'Position','Url_Score', 'HTTP_Version','Http_code_babbar','Thekeyword','Url','Content_type','Status_code','Status','Indexability_x','Indexability_status_x'
                             ,'X_robots_tag1','Meta_Robots_1_score','Meta_Refresh_1','Canonical_link_element1','rel_next_1','rel_prev_1','HTTP_rel_next_1','HTTP_rel_prev_1','amphtml_link_element',
                               'Readability','Link_score','Closest_Similarity_Match','NoNear_Duplicates','Spelling_Errors','Grammar_Errors','Hash','Last_modified','Redirect_URL',
                               'Redirect_type','Cookies','URL_Encoded_Address','Crawl_Timestamp','Type_1','Indexability_y','Indexability_Status_y', 'Date_added']
@@ -357,7 +357,7 @@ class TrainModels:
         pd.set_option('display.max_columns', None)
         # Affichez le DataFrame
         print(df_model)
-        return stack_model
+        return stack_model, X_train, y_train, X_test, y_test
 
      
    

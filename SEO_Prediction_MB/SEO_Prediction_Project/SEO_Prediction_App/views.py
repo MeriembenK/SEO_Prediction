@@ -8,7 +8,7 @@ from django.http.response import HttpResponseRedirect
 from django.http import HttpResponse
 from django.contrib.auth.models import User
 from . import test
-from .models import Test
+from .models import Data, Test, MinMaxValue
 from Predictive.train_Models import TrainModels
 from Predictive.response_Builder import ResponseBuilder
 from django.http import HttpResponse
@@ -17,6 +17,13 @@ from django.db.models import Max
 from django.http import JsonResponse
 import plotly.express as px
 import pandas as pd
+import json
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
+
 
 # Create your views here.
 #-------------------------General(Dashboards,Widgets & Layout)---------------------------------------
@@ -59,25 +66,60 @@ def url(request):
 
 
 
+
 def handle_keyword(request):
     if request.method == 'POST':
         keyword_searched = request.POST.get('keyword')
+        email = request.POST.get('email')
+
+        # Stocker les valeurs dans la session Django
+        request.session['keyword'] = keyword_searched
+        request.session['email'] = email
+        
+        expediteur = 'damienhernandez0@gmail.com'
+        mot_de_passe = 'ceeeiennsmzyuhfg'
+        destinataire = email
+        objet = 'Analyse predictive ranking'
+        corps_message = f"""Bonjour, une analyse sur le prédictive ranking a été créée.\n
+                            Bien cordialemment"""
+
+        message = MIMEMultipart()
+        message['From'] = expediteur
+        message['To'] = destinataire
+        message['Subject'] = objet
+        message.attach(MIMEText(corps_message, 'plain'))
+        serveur_smtp = smtplib.SMTP('smtp.gmail.com', 587)
+        serveur_smtp.starttls()
+        serveur_smtp.login(expediteur, mot_de_passe)
+        serveur_smtp.send_message(message)
+        serveur_smtp.quit()
+
         test.run_script_with_keyword(keyword_searched)
         
         # Initialisation de la classe TrainModels
         trainer = TrainModels()
         response_builder = ResponseBuilder()
         trainer.keyword = keyword_searched
+        print("****************************Trainer.keyword is ***********************", trainer.keyword)
 
         # Read data from Data Base
         trainer.read_my_data()
         trainer.df = trainer.data_to_drop(trainer.df)
         trainer.preprocessing()
-        trainer.Final_get_importance()
 
+        trained_models, X_train, y_train, X_test, y_test=trainer.Final_get_importance()
+        response_builder.trainedModels= trained_models
+        response_builder.df = trainer.df
+        response_builder.trainedModels.X = X_train
+        response_builder.trainedModels.y = y_train
+
+        min_max = response_builder.get_min_max()
+        
+        
         # Récupérer l'ID du test le plus récent pour le mot-clé spécifié
         latest_test_id = Test.objects.filter(Keyword=keyword_searched).aggregate(latest_id=Max('id'))['latest_id']
 
+        #Récupération des données pour les graphs en courbe
         if latest_test_id:
             # Récupérer le test correspondant à l'ID le plus récent
             test_instance = Test.objects.get(id=latest_test_id)
@@ -93,18 +135,150 @@ def handle_keyword(request):
                     field_value = round(field_value, 2)
                 fields_and_values[display_field_name] = field_value
 
+
             # Filtrer les champs qui sont des entiers ou des flottants et ont une valeur supérieure à 0
             results = [(field_name, field_value) for field_name, field_value in fields_and_values.items() if isinstance(field_value, (int, float)) and field_value > 0.0]
             results = sorted(results, key=lambda x: x[1], reverse=True)[:15]
 
-            # Utilisez les données nécessaires à l'histogramme directement ici
-            histogram_data = [{'variable': field_name, 'score': field_value} for field_name, field_value in fields_and_values.items()]
+            # Récupérer tous les noms de champ à partir de results
+            champs = [field_name for field_name, _ in results]
+          
+            # Récupérer les valeurs de l'attribut à partir du quatrième champ pour chaque objet dans la base de données filtrés par keyword_searched
+            valeurs_attributs_a_partir_de_4_yes = [] 
+            valeurs_attributs_a_partir_de_4_no = [] 
 
-            return render(request, 'general/dashboard/default/index.html', {'results': results, 'histogram_data': histogram_data})
-        else:
-            results = None
+            # Restaurer les noms de champ en supprimant les remplacements précédents
+            champs_restaurés = [field_name.replace(' ', '_').replace('_score', '_') for field_name in champs]
+            # Liste des colonnes à exclure
+            columns_to_exclude = ["id", "nb_url", "precision"]
+            # Déterminer les colonnes à conserver
+            set_champs = set(champs_restaurés)
+            set_exclude = set(columns_to_exclude)
+            set_min_max = set(min_max)
 
-        return render(request, 'general/dashboard/default/index.html', {'results': results})
+            columns_to_keep = list(set_champs - set_exclude & set_min_max)
+            # Alternativement, vous pouvez utiliser une compréhension de liste si vous préférez rester avec des listes
+            columns_to_keep = [field for field in champs_restaurés if field not in columns_to_exclude and field in min_max]
+
+            print(columns_to_keep)
+
+            # Filtrer min_max pour ne conserver que les clés de columns_to_keepzs
+            min_max_filtered = {key: min_max[key] for key in columns_to_keep}
+
+            print("min_max_filtered:", min_max_filtered)
+            
+            results_with_min_max = []
+            for field_name, field_value in results:
+                # Obtenir les valeurs min-max en tant que chaîne
+                min_max_series = min_max_filtered.get(field_name.replace(' ', '_'), None)
+                min_max_str = str(min_max_series.values[0]) if min_max_series is not None else "N/A"  # Exclure les métadonnées comme index
+                results_with_min_max.append((field_name, field_value, min_max_str))
+           
+            print("j'affiche results_with_min_wmax, afin d'envoyer vers le front-end et les afficher",results_with_min_max)  
+
+            # Boucle à travers les résultats pour créer et enregistrer les valeurs min_max
+            for attribute_name, attribute_value, min_max_value in results_with_min_max:
+                # Créez une instance de MinMaxValue associée à l'instance de Test
+                min_max_instance = MinMaxValue.objects.create(
+                    test_instance=test_instance,
+                    attribute_name=attribute_name,
+                    attribute_value=attribute_value,
+                    min_max=min_max_value  # Utilisez le champ 'min_max' au lieu de 'min_max_value'
+                )
+                # Enregistrez l'instance dans la base de données
+                min_max_instance.save()
+            
+            #print("DataFrame filtré avec les colonnes de 'results':", min_max_filtered)
+            for objet in Data.objects.filter(Keyword=keyword_searched, Top10=True):
+                # Récupérer les valeurs de tous les attributs à partir du quatrième champ
+                valeurs_attributs = [getattr(objet, field_name) for field_name in champs_restaurés[4:]]  # Utilisez tous les champs à partir du quatrième
+                valeurs_attributs_a_partir_de_4_yes.append(valeurs_attributs)
+
+            # Parcourir les huit premiers attributs à partir du 4eme
+            for index, attribut in enumerate(champs_restaurés[4:15], start=4):
+                #print(f"Valeurs de l'attribut '{attribut}' pour Top10 = Yes:")
+                for valeurs in valeurs_attributs_a_partir_de_4_yes:
+                    if len(valeurs) > index - 4:  # Index relatif à la position dans champs_restaurés
+                        print(valeurs[index - 4])
+                    else:
+                        print("Aucune valeur disponible")
+                print("\n")
+
+
+            for objet in Data.objects.filter(Keyword=keyword_searched, Top10=False):
+                # Récupérer les valeurs de tous les attributs à partir du quatrième champ
+                valeurs_attributs = [getattr(objet, field_name) for field_name in champs_restaurés[4:]]  # Utilisez tous les champs à partir du quatrième
+                valeurs_attributs_a_partir_de_4_no.append(valeurs_attributs)
+
+            # Parcourir les huit premiers attributs à partir du 4eme
+            for index, attribut in enumerate(champs_restaurés[4:15], start=4):
+                #print(f"Valeurs de l'attribut '{attribut}' pour Top10 = No:")
+                for valeurs in valeurs_attributs_a_partir_de_4_no:
+                    if len(valeurs) > index - 4:  # Index relatif à la position dans champs_restaurés
+                        print("valeurs[index - 4]")
+                    else:
+                        print("Aucune valeur disponible")
+                print("\n")
+
+
+              # Organiser les données
+            data_for_charts = []
+            for index, attribut in enumerate(champs_restaurés[3:15], start=3):
+                values_yes = [v[index - 4] for v in valeurs_attributs_a_partir_de_4_yes if v[index - 4] is not None]
+                values_no = [v[index - 4] for v in valeurs_attributs_a_partir_de_4_no if v[index - 4] is not None]
+                data_for_charts.append({'attribut': attribut, 'yes': values_yes, 'no': values_no})
+
+
+                #print("What im going to send",data_for_charts)
+
+           
+            data_for_charts_json = json.dumps(data_for_charts)        
+  
+        
+        objet_terminer = "Analyse predictive ranking terminée"
+        corps_message_terminer = f"L'analyse pour le mot-clé '{keyword_searched}' est terminée. Vous pouvez maintenant consulter les résultats."
+       
+        message = MIMEMultipart()
+        message['From'] = expediteur
+        message['To'] = destinataire
+        message['Subject'] = objet_terminer
+        message.attach(MIMEText(corps_message_terminer, 'plain'))
+        serveur_smtp = smtplib.SMTP('smtp.gmail.com', 587)
+        serveur_smtp.starttls()
+        serveur_smtp.login(expediteur, mot_de_passe)
+        serveur_smtp.send_message(message)
+        serveur_smtp.quit()
+
+        return render(request, 'general/dashboard/default/index.html', {'results': results, 'data_for_charts_json': data_for_charts_json, 'results_with_min_max': results_with_min_max})
+    return HttpResponse()
+    
+    
+    
+
+#----------------Widgets
+
+@login_required(login_url="/login_home")
+def general_widget(request):
+    # Récupérer toutes les occurrences de Test depuis la base de données
+    all_tests = Test.objects.all()
+    
+    # Imprimer chaque instance de Test et ses attributs
+    for test in all_tests:
+        print(f"ID: {test.id}, Keyword: {test.Keyword}, nb_url: {test.nb_url}, precision: {test.precision}")
+    
+    # Ajouter les tests au contexte
+    context = {
+        "breadcrumb": {
+            "parent": "Widgets",
+            "child": "General"
+        },
+        "all_tests": all_tests
+    }
+    
+    # Rendre le template avec le contexte
+    return render(request, "general/widget/general-widget/general-widget.html", context)
+
+
 
 @login_required(login_url="/login_home")
 def dashboard_02(request):
@@ -121,13 +295,6 @@ def crypto(request):
     context = { "breadcrumb":{"parent":"Dashboard", "child":"Crypto"}}
     return render(request,"general/dashboard/crypto/crypto.html",context)
 
-
-#----------------Widgets
-
-@login_required(login_url="/login_home")
-def general_widget(request):
-    context = { "breadcrumb":{"parent":"Widgets", "child":"General"}}
-    return render(request,"general/widget/general-widget/general-widget.html",context)
     
 
 @login_required(login_url="/login_home")

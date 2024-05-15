@@ -391,7 +391,12 @@ class Keyword_Url(models.Model):
     Keyword_url = models.CharField(max_length=255, null=True)
 
 
-
+class MinMaxValue(models.Model):
+    test_instance = models.ForeignKey(Test, on_delete=models.CASCADE, related_name='min_max_values')
+    attribute_name = models.CharField(max_length=255)
+    attribute_value = models.FloatField(null=True)
+    min_max = models.CharField(max_length=50)
+    
 
 
 

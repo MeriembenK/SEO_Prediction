@@ -88,8 +88,23 @@ class UrlPredect:
 
 
     #Récupération de la data pour un url
+    """def get_data_for_1_urls(self,url,keyword,df,responseBuilder):
+        self.url_data   = self.get_data_for_url(url,keyword,df,responseBuilder)
+        if isinstance(self.url_data, tuple) and len(self.url_data) > 0:
+            # Extraire le premier élément, qui est un DataFrame
+            extracted_df = self.url_data[0]
+
+            # Vérifiez que c'est bien un DataFrame
+            if isinstance(extracted_df, pd.DataFrame):
+                self.url_data = extracted_df
+            else:
+                raise TypeError("Le premier élément du tuple n'est pas un DataFrame.")
+            
+            print("I print url_data in get_url_for_1_urls",self.url_data)"""
+    
     def get_data_for_1_urls(self,url,keyword,df,responseBuilder):
         self.url_data   = self.get_data_for_url(url,keyword,df,responseBuilder)
+
 
 
 
@@ -157,7 +172,7 @@ class UrlPredect:
             return pd.DataFrame()"""
     
        
-    #Collecter la data d'un URL
+    #Collecter la data d'une URL
     def get_url_data(self,url,keyword,responseBuilder):
         self.url        = url
         self.keyword    = keyword
@@ -176,6 +191,19 @@ class UrlPredect:
 
      #Garder que les colonnes utiles pour la prédictions de la position de l'URL, pour un df de la classe   
     def fun_fun(self):
+        
+        print("Contenu du tuple:", self.url_data)
+        print("Type de self.url_data:", type(self.url_data))
+        print("Contenu de self.url_data:", self.url_data)
+
+        if isinstance(self.url_data, tuple):
+            # Assurez-vous qu'il contient un DataFrame ou des données qui peuvent être converties
+            if len(self.url_data) > 0 and isinstance(self.url_data[0], pd.DataFrame):
+                # Prenez le premier élément comme DataFrame
+                self.url_data = self.url_data[0]
+            else:
+                raise TypeError("Le tuple ne contient pas de DataFrame.")
+
         test = self.url_data.copy()
         my_url_data=test[['Ttfb_babbar', 'Page_value_babbar', 'Page_trust_babbar',
                 'Semantic_value_babbar', 'Backlinks_babbar', 'Backlinks_host_babbar',

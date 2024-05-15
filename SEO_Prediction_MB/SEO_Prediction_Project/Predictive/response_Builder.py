@@ -93,14 +93,40 @@ class ResponseBuilder:
         ##### get min - max of each feature
         #initial data
         x_init = self.df
+        print("Premières lignes de x_init:")
+        print(x_init.head(6))
+        print("Longueur de 'x_init':", len(x_init))
+        # Utilisation de len() pour obtenir le nombre de colonnes
+        print("Nombre de colonnes dans 'x_init':", len(x_init.columns))
+
         #x is the data aftre prepros
         x = self.trainedModels.X 
+        print("Premières lignes de x:")
+        print(x.head(6))
+        print("Longueur de 'x':", len(x))
         #y is labels
+
         y = self.trainedModels.y 
+        print("Premières lignes de y:")
+        print(y.head(6))
+        print("Longueur de 'y':", len(y))
+
         #get the collumns that i need from the init data
         x_init = x_init[list(x.columns)]
+
+        # Utilisation de len() pour obtenir le nombre de colonnes
+        print("Nombre de colonnes dans 'x_init':", len(x_init.columns))
+        print("Nombre de colonnes dans 'x':", len(x.columns))
+
         #get the Top only from the init data ( top is the url that r on the first pos (in range 1-10))
-        df1 = x_init[y == 0]
+        # Afficher les index du DataFrame et de la Series booléenne
+        print("Index de x_init:", x_init.index)
+        print("Index de y:", y.index)
+       
+        y_aligned = y.reindex(x_init.index, fill_value=False)
+        df1 = x_init[y_aligned == False]
+
+        #df1 = x_init[y == 0]
         #get the median of the top data 
         df2 = df1.median().to_frame().T
         #make a class here D want a class that have a range of 5 i know that it does'nt make sence but i dont have a choise
@@ -254,24 +280,54 @@ class ResponseBuilder:
 
 
     def get_url_predect_result(self,url,keyword):
-        # get the data
-        print(url)
-        print(keyword)
+        # Impressions de débogage
+        print("URL:", url)
+        print("Keyword:", keyword)
 
-        df = self.df.copy()
-        # get the data of the given url and keyword 
+        df = self.df.copy()  # Copier le DataFrame initial
+
+        # Obtenir les données de l'URL donnée
         up = UrlPredect() 
-        up.get_data_for_1_urls(url,keyword,df,self)
-        pos = up.url_data['Position'].iloc[0]
+        up.get_data_for_1_urls(url, keyword, df, self)
 
-        # get the only features that i need from data
-        up.url_data = up.fun_fun() 
+        # Vérifier le type de url_data
+        if isinstance(up.url_data, tuple):
+            # Si c'est un tuple, accéder au premier élément (en supposant qu'il s'agit du DataFrame attendu)
+            df_from_tuple = up.url_data[0]
+        else:
+            df_from_tuple = up.url_data
 
-        # get the result of traing model
-        #values_for_pie = self.sort_models_result()
-        # try to find what to change in ur url to bet on the top if u r not
-        res = ""#up.try_for_columns(self.trainedModels.models.get(values_for_pie[1][0])[0],self) 
- 
+        # Assurez-vous que c'est un DataFrame avant d'accéder à des colonnes
+        if not isinstance(df_from_tuple, pd.DataFrame):
+            raise TypeError("up.url_data doit être un DataFrame pour accéder à des colonnes par nom.")
+
+        # Obtenir la position du DataFrame corrigé
+        if 'Position' in df_from_tuple.columns:
+            pos = df_from_tuple['Position'].iloc[0]
+        else:
+            pos = None  # Ou un autre moyen de gérer le cas où la colonne 'Position' n'existe pas
+        
+        print("the position",pos)
+        # Appliquer des corrections ou transformations supplémentaires
+        up.url_data = up.fun_fun()
+    
+        print("Colonnes dans up.url_data:", up.url_data.columns)
+
+        # Les colonnes que vous souhaitez conserver
+        columns_to_keep = self.trainedModels.X.columns
+
+        # Identifiez les colonnes manquantes dans up.url_data
+        missing_columns = [col for col in columns_to_keep if col not in up.url_data.columns]
+
+        # Si des colonnes manquent, affichez un message ou émettez une exception
+
+        if missing_columns:
+          print("Colonnes manquantes:", missing_columns)
+          # Décider ce qu'il faut faire avec ces colonnes manquantes
+         
+          #res = up.try_for_columns(self.trainedModels,self)
+        
+        """
         res = res.split("\n")
         l = []
         for r in res :
@@ -284,6 +340,9 @@ class ResponseBuilder:
         x_init = self.df
         x = self.trainedModels.X 
         y = self.trainedModels.y 
+        
+        print("Index du DataFrame:", x_init.index)
+        print("Index de la Series booléenne:", y.index)
 
         # get the data of the top (labeled 0)
         df1 = x_init[y == 0]
@@ -321,7 +380,9 @@ class ResponseBuilder:
         self.get_url_predect_table()
         self.df_url = df  
         missing_val = df.isnull().sum().sum() 
-        return [pos,missing_val]
+        return [pos,missing_val]"""
+    
+    
   
     def get_url_predect_table(self):
         df = self.url_pred_res[1].copy()
