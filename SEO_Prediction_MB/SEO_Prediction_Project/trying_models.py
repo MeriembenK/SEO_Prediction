@@ -13,15 +13,37 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from Predictive.data_colector import DataColector 
 from SEO_Prediction_App.models import Keyword
+<<<<<<< HEAD
 from SEO_Prediction_App import test
+=======
+>>>>>>> 380f5623e5454e10dcc670b83a03d4ff2b7896ab
 
 # Récupérer tous les mots-clés depuis la base de données
 keywords = Keyword.objects.all()
 
+<<<<<<< HEAD
+=======
+# Récupérer tous les mots-clés depuis la base de données
+keywords = Keyword.objects.all()
+
+>>>>>>> 380f5623e5454e10dcc670b83a03d4ff2b7896ab
 # Afficher les options disponibles à l'utilisateur
 print("Choisissez le mot-clé :")
 for index, keyword in enumerate(keywords, start=1):
     print(f"{index}. {keyword.Keyword}")
+<<<<<<< HEAD
+
+# Demander à l'utilisateur de saisir le numéro du mot-clé
+selected_keyword_index = int(input("Entrez le numéro du mot-clé que vous souhaitez : "))
+
+# Vérifier si le numéro saisi est valide
+if 1 <= selected_keyword_index <= len(keywords):
+    # Récupérer le mot-clé sélectionné par l'utilisateur
+    selected_keyword = keywords[selected_keyword_index - 1]
+    print(f"Vous avez choisi le mot-clé : {selected_keyword.Keyword}")
+else:
+    print("Numéro de mot-clé invalide.")
+=======
 
 # Demander à l'utilisateur de saisir le numéro du mot-clé
 selected_keyword_index = int(input("Entrez le numéro du mot-clé que vous souhaitez : "))
@@ -34,19 +56,82 @@ if 1 <= selected_keyword_index <= len(keywords):
 else:
     print("Numéro de mot-clé invalide.")
 
+# Initialisation de la classe TrainModels
+trainer = TrainModels()
+response_builder = ResponseBuilder()
+trainer.keyword= selected_keyword.Keyword
 
+# Read data from Data Base
+trainer.read_my_data()
+nombre_lignes = trainer.df.shape[0]
+print("Nombre de lignes dans le DataFrame:", nombre_lignes)
+
+# Accéder aux DataFrames créés par la méthode
+trainer.df = trainer.data_to_drop(trainer.df)
+response_builder.df= trainer.df
+
+# Prétraitement de la data
+trainer.preprocessing()
+>>>>>>> 380f5623e5454e10dcc670b83a03d4ff2b7896ab
+
+#Split data entre data d'entrainement et la data du test
+X_train, X_test, y_train, y_test = trainer.split_data(trainer.X, trainer.y)
+
+<<<<<<< HEAD
 test.run_script_with_keyword(selected_keyword)
 
 # Initialisation de la classe TrainModels
 trainer = TrainModels()
+=======
+# Display the number of elements in each set
+print("Number of elements in X_train:", X_train.shape[0])
+print("Number of elements in y_train:", y_train.shape[0])
+print("Number of elements in X_test:", X_test.shape[0])
+print("Number of elements in y_test:", y_test.shape[0])
+
+"*************************Testing models**********************************"
+"""stack_model, X_test_stack, y_test_stack, Model1, Model2, Model3, Model4, Model5= trainer.train_and_evaluate_stacking(X_train, y_train, X_test, y_test, n_folds=5)
+auc, acc= trainer.eval_model(stack_model, X_test_stack, y_test_stack)
+print(auc)
+print("The accuracy",acc)"""
+
+trainer.Final_get_importance()
+
+fig, percentage_top, percentage_not_top = response_builder.get_percentage_of_classes()
+print("Pourcentage des non Top",percentage_not_top)
+print("Pourcentage des Top",percentage_top)
+
+"""*********************************************************Testing récupération url site****************************************************************************"""
+
+"""url_predictor = UrlPredect()
+df = url_predictor.get_data_from_database()
+dc = DataColector()"""
+
+"""
+# Utilisez la méthode get_all_site_urls à partir de l'instance
+start_url = "https://www.agence-naga.fr/expertise/webmarketing/referencement-naturel-seo-lyon/"
+keyword = "agence seo nantes referencement44fr"
+>>>>>>> 380f5623e5454e10dcc670b83a03d4ff2b7896ab
 response_builder = ResponseBuilder()
 trainer.keyword = selected_keyword
 print("****************************Trainer.keyword is ***********************", trainer.keyword)
 
+<<<<<<< HEAD
+=======
+
+
+all_site_urls = dc.get_all_site_urls(start_url, 3)
+print(all_site_urls)
+print("Nombre de liens :", len(all_site_urls))
+
+
+trainer = TrainModels()
+>>>>>>> 380f5623e5454e10dcc670b83a03d4ff2b7896ab
 # Read data from Data Base
 trainer.read_my_data()
 trainer.df = trainer.data_to_drop(trainer.df)
 trainer.preprocessing()
+<<<<<<< HEAD
 trainer.Final_get_importance()
 
 
@@ -57,6 +142,36 @@ trainer.Final_get_importance()
 
     specific_url = 'https://www.promovacances.com/billet-avion/vol-maroc/pays,149/'
     keyword = 'Billet d\'avion maroc'
+=======
+
+#Split data entre data d'entrainement et la data du test
+X_train, X_test, y_train, y_test = trainer.split_data(trainer.X, trainer.y)
+
+columns_with_nan = trainer.df.columns[trainer.df.isnull().any()].tolist()
+
+# Afficher les colonnes avec des valeurs NaN, leur nombre de valeurs NaN respectif et leur type
+nan_info = pd.DataFrame({
+    'Colonnes': columns_with_nan,
+    'Nombre de NaN': trainer.df[columns_with_nan].isnull().sum().tolist(),
+    'Type': trainer.df[columns_with_nan].dtypes.tolist()
+})
+
+print("Informations sur les colonnes avec des valeurs NaN :\n", nan_info)"""
+
+
+
+"""url_predictor = UrlPredect()
+
+
+df = url_predictor.get_data_from_database()
+
+if not df.empty:
+    num_columns = df.shape[1]
+    print("Nombre de colonnes dans data_dr :", num_columns)
+
+    specific_url = 'https://www.premiereclasse.com/fr-fr/'
+    keyword = 'hôtel première classe'
+>>>>>>> 380f5623e5454e10dcc670b83a03d4ff2b7896ab
 
 
     url_predictor.url = specific_url
@@ -204,3 +319,10 @@ if missing_columns:
 result  =responseBuilder.get_url_predect_result(specific_url, keyword)
 print("Résultat :", result)"""
 
+<<<<<<< HEAD
+=======
+# Appeler la fonction try_for_columns avec le modèle entraîné pour prédir pour la donnée test 
+result = url_predictor.try_for_columns(trained_model, response_builder)
+print(result)
+"""
+>>>>>>> 380f5623e5454e10dcc670b83a03d4ff2b7896ab
