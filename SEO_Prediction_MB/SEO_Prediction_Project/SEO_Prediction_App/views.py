@@ -14,6 +14,8 @@ from Predictive.response_Builder import ResponseBuilder
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.db.models import Max
+from django.contrib.auth import get_user_model
+from django.utils.functional import SimpleLazyObject
 from django.http import JsonResponse
 import plotly.express as px
 import pandas as pd
@@ -66,11 +68,26 @@ def url(request):
 
 
 
-
+User = get_user_model()
 def handle_keyword(request):
     if request.method == 'POST':
         keyword_searched = request.POST.get('keyword')
         email = request.POST.get('email')
+        
+        user_instance = request.user
+
+        print(user_instance)
+        user_instance = request.user
+
+        # Si user_instance est un SimpleLazyObject, déballez-le
+        if isinstance(user_instance, SimpleLazyObject):
+            user_instance = user_instance._wrapped
+
+        # Assurez-vous que user_instance est bien une instance de User
+        if not isinstance(user_instance, User):
+            return HttpResponse("Utilisateur non valide", status=400)
+
+
 
         # Stocker les valeurs dans la session Django
         request.session['keyword'] = keyword_searched
@@ -107,7 +124,7 @@ def handle_keyword(request):
         trainer.df = trainer.data_to_drop(trainer.df)
         trainer.preprocessing()
 
-        trained_models, X_train, y_train, X_test, y_test=trainer.Final_get_importance()
+        trained_models, X_train, y_train, X_test, y_test=trainer.Final_get_importance(user_instance)
         response_builder.trainedModels= trained_models
         response_builder.df = trainer.df
         response_builder.trainedModels.X = X_train
@@ -254,31 +271,54 @@ def handle_keyword(request):
     
     
     
-
-#----------------Widgets
-
-@login_required(login_url="/login_home")
 def general_widget(request):
-    # Récupérer toutes les occurrences de Test depuis la base de données
-    all_tests = Test.objects.all()
-    
-    # Imprimer chaque instance de Test et ses attributs
-    for test in all_tests:
-        print(f"ID: {test.id}, Keyword: {test.Keyword}, nb_url: {test.nb_url}, precision: {test.precision}")
-    
-    # Ajouter les tests au contexte
-    context = {
-        "breadcrumb": {
-            "parent": "Widgets",
-            "child": "General"
-        },
-        "all_tests": all_tests
-    }
-    
-    # Rendre le template avec le contexte
-    return render(request, "general/widget/general-widget/general-widget.html", context)
+    # Assurez-vous que l'utilisateur est authentifié
+    if request.user.is_authenticated:
+        # Récupérez l'utilisateur connecté
+        user = request.user
 
+        # Récupérez tous les tests de l'utilisateur connecté avec leurs valeurs min/max associées
+        all_tests = Test.objects.filter(user=user).prefetch_related('min_max_values')
 
+        # Créez une liste pour stocker les tests avec leurs valeurs min/max associées
+        tests_with_min_max_values = []
+
+        # Bouclez à travers chaque test et formatez les données
+        for test in all_tests:
+            test_data = {
+                'id': test.id,
+                'keyword': test.Keyword,
+                'nb_url': test.nb_url,
+                'precision': test.precision,
+                'Ttfb_babbar_score': test.Ttfb_babbar_score,
+                'min_max_values': []
+            }
+
+            # Ajoutez les valeurs min/max associées à ce test
+            for min_max_value in test.min_max_values.all():
+                test_data['min_max_values'].append({
+                    'attribute_name': min_max_value.attribute_name,
+                    'attribute_value': min_max_value.attribute_value,
+                    'min_max': min_max_value.min_max
+                })
+
+            # Ajoutez le test formaté à la liste des tests
+            tests_with_min_max_values.append(test_data)
+
+        # Envoyez les données formatées au frontend
+        context = {
+            "breadcrumb": {
+                "parent": "Widgets",
+                "child": "General"
+            },
+            "tests_with_min_max_values": tests_with_min_max_values
+        }
+
+        return render(request, "general/widget/general-widget/general-widget.html", context)
+    else:
+        # Gérez le cas où l'utilisateur n'est pas authentifié
+        # Redirigez l'utilisateur vers la page de connexion ou affichez un message d'erreur
+        return render(request, "login_required_error.html")
 
 @login_required(login_url="/login_home")
 def dashboard_02(request):

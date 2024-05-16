@@ -6,29 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{% static 'path/to/bootstrap.min.css' %}">
     <style>
-        .card {
-            margin-bottom: 20px; /* Espace entre les cartes */
-        }
-        #chart-container {
-            width: 100%;
-            height: 400px; /* Hauteur fixe pour le conteneur du graphique */
-        }
-        .form-select {
-            width: 280px; /* Ajuste la largeur selon le contenu, sinon utilisez un pourcentage ou une valeur fixe */
-            display: inline-block;
-        }
-
-        .form-label {
-            margin-right: 10px; /* Espacement entre le label et le sélecteur */
-        }
-
+        /* Vos styles CSS ici */
     </style>
     <title>SEO Prediction</title>
 </head>
 <body>
     <div class="container-fluid">
+        <!-- Section "Histoire des mots clés" -->
         <div class="row">
-            <!-- Section "Histoire des mots clés" -->
             <div class="col-12">
                 <div class="card">
                     <div class="card-header card-no-border pb-0">
@@ -47,53 +32,48 @@
                         </div>
                     </div>
                     <div class="card-body py-lg-3">
-                        <!-- Texte et Sélecteur -->
-                        <div class="mb-3">
-                            <label for="keywordFilter" class="form-label">Filter by keyword</label>
-                            <select class="form-select" id="keywordFilter">
-                                <option selected>Select...</option>
-                                <option value="1">Option 1</option>
-                                <option value="2">Option 2</option>
-                                <option value="3">Option 3</option>
-                            </select>
-                        </div>
-                        <!-- Tableau -->
+                        <!-- Tableau pour afficher les données des tests -->
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th>Colonne 1</th>
-                                    <th>Colonne 2</th>
-                                    <!-- Ajoutez d'autres colonnes si nécessaire -->
+                                    <th>ID</th>
+                                    <th>Keyword</th>
+                                    <th>nb_url</th>
+                                    <th>Precision</th>
+                                    <th>Ttfb_babbar_score</th>
+                                    <th>MinMax Values</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>Donnée 1</td>
-                                    <td>Donnée 2</td>
-                                    <!-- Ajoutez d'autres cellules pour chaque ligne -->
-                                </tr>
-                                <!-- Ajoutez d'autres lignes si nécessaire -->
+                                {% for test in tests_with_min_max_values %}
+                                    <tr>
+                                        <td>{{ test.id }}</td>
+                                        <td>{{ test.keyword }}</td>
+                                        <td>{{ test.nb_url }}</td>
+                                        <td>{{ test.precision }}</td>
+                                        <td>{{ test.Ttfb_babbar_score }}</td>
+                                        <td>
+                                            <!-- Boucle pour afficher les valeurs min/max -->
+                                            {% for min_max_value in test.min_max_values %}
+                                                {{ min_max_value.attribute_name }}: {{ min_max_value.attribute_value }} ({{ min_max_value.min_max }})
+                                                <br>
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
+        <!-- Section "Graphique" -->
         <div class="row">
-            <!-- Section "Graphique" -->
             <div class="col-12">
                 <div class="card">
                     <div class="card-header card-no-border pb-0">
                         <div class="header-top">
                             <h5>Graphique</h5>
-                          
-                                <h1>General Widget</h1>
-                                <ul>
-                                    {% for test in all_tests %}
-                                        <li>ID: {{ test.id }}, Keyword: {{ test.Keyword }}, nb_url: {{ test.nb_url }}, precision: {{ test.precision }}</li>
-                                    {% endfor %}
-                                </ul>
-                            
                         </div>
                     </div>
                     <div class="card-body py-lg-3">

@@ -12,11 +12,22 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from Predictive.data_colector import DataColector 
-from SEO_Prediction_App.models import Keyword
+from SEO_Prediction_App.models import Keyword, Test
+
+
+Test.objects.all().delete()
+
+print("All data and keywords have been deleted.")
+  
+data_count = Test.objects.count()
+
+
+print(f"Nombre de données (Data) dans la base de données : {data_count}")
+
 
 
 # Récupérer tous les mots-clés depuis la base de données
-keywords = Keyword.objects.all()
+"""keywords = Keyword.objects.all()
 
 # Afficher les options disponibles à l'utilisateur
 print("Choisissez le mot-clé :")
@@ -57,13 +68,13 @@ print(trainer.X.isnull().sum())
 
 
 #Split data entre data d'entrainement et la data du test
-"""X_train, X_test, y_train, y_test = trainer.split_data(trainer.X, trainer.y)
+X_train, X_test, y_train, y_test = trainer.split_data(trainer.X, trainer.y)
 
 # Display the number of elements in each set
 print("Number of elements in X_train:", X_train.shape[0])
 print("Number of elements in y_train:", y_train.shape[0])
 print("Number of elements in X_test:", X_test.shape[0])
-print("Number of elements in y_test:", y_test.shape[0])"""
+print("Number of elements in y_test:", y_test.shape[0])
 
 trainedModels, X_train, y_train, X_test, y_test=trainer.Final_get_importance()
 response_builder.trainedModels = trainedModels
@@ -72,12 +83,12 @@ response_builder.trainedModels.X = X_train
 response_builder.trainedModels.y = y_train
 
 "*************************Testing models**********************************"
-"""stack_model, X_test_stack, y_test_stack, Model1, Model2, Model3, Model4, Model5= trainer.train_and_evaluate_stacking(X_train, y_train, X_test, y_test, n_folds=5)
+stack_model, X_test_stack, y_test_stack, Model1, Model2, Model3, Model4, Model5= trainer.train_and_evaluate_stacking(X_train, y_train, X_test, y_test, n_folds=5)
 auc, acc= trainer.eval_model(stack_model, X_test_stack, y_test_stack)
 print(auc)
-print("The accuracy",acc)"""
+print("The accuracy",acc)
 
 
 df5 = response_builder.get_min_max()
 
-print(df5)
+print(df5)"""

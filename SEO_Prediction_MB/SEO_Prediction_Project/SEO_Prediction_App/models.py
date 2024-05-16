@@ -3,6 +3,7 @@
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
 from django.db.models import Q
+from django.contrib.auth import get_user_model
 
 class User(AbstractUser):
     # Ajoutez des champs personnalisés si nécessaire
@@ -166,7 +167,12 @@ class Data(models.Model):
                            'Redirect_type', 'Cookies', 'HTTP_Version', 'URL_Encoded_Address', 'Crawl_Timestamp','Errors', 'Warnings', 'Total_Types', 'Unique_Types', 'Type_1',
                            'Indexability_y', 'Indexability_Status_y', 'Title1_score', 'Meta_Description1_score', 'Meta_Description1_score', 'Meta_Keywords1_score',
                            'Meta_Keywords1_score', 'Meta_Keywords1_score', 'H1_1_score', 'H1_2_score', 'H2_1_score', 'H2_2_score', 'Meta_Robots_1_score', 'Url_Score']
+
+User = get_user_model()
+
 class Test(models.Model):
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
     Keyword = models.CharField(max_length=250, null=True) #keyword
     nb_url =  models.FloatField(null=True) #nb_url
     precision =  models.FloatField(null=True) # précision
