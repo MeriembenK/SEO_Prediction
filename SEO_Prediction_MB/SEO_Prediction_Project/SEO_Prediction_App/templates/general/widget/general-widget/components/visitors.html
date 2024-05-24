@@ -30,6 +30,10 @@
         #bar-chart {
             margin-top: 20px;
         }
+         /* Styles CSS */
+        #pie-chart {
+            margin-top: 20px;
+        }
     </style>
     <title>SEO Prediction</title>
 </head>
@@ -83,12 +87,9 @@
                                         option.textContent = keyword;
                                         selectElement.appendChild(option);
                                     });
-                                    
-                                    // Select the first keyword by default and update the chart
-                                    if (selectElement.options.length > 1) {
-                                        selectElement.selectedIndex = 0;
-                                        updateBarChart(selectElement.options[0].value);
-                                    }
+
+                                    // Sélectionner le mot-clé par défaut et mettre à jour le graphique une seule fois
+                                    updateBarChartForAllKeywords();
                                 });
                             </script>
                         </div>
@@ -179,7 +180,7 @@
                                     }
                                 });
 
-                                // Initial display
+                                // Affichage initial
                                 displayRows(currentPage);
                             });
                         </script>
@@ -208,7 +209,7 @@
                                             testDates.forEach(date => formData.append('test_dates[]', date));
                                             testTimes.forEach(time => formData.append('test_times[]', time));
 
-                                            // AJAX request to delete tests
+                                            // Requête AJAX pour supprimer les tests
                                             fetch("{% url 'delete_tests' %}", {
                                                 method: 'POST',
                                                 headers: {
@@ -217,7 +218,7 @@
                                                 body: formData
                                             }).then(response => {
                                                 if (response.ok) {
-                                                    selectedRows.forEach(checkbox =>                                                    {
+                                                    selectedRows.forEach(checkbox => {
                                                         checkbox.closest("tr").remove();
                                                     });
                                                     table.classList.remove('show-checkboxes');
@@ -241,80 +242,7 @@
                             });
                         </script>
                         <script>
-                            document.addEventListener("DOMContentLoaded", function() {
-                                const deleteButton = document.getElementById("delete-selected");
-                                const selectAllCheckbox = document.getElementById("select-all");
-                                const rowCheckboxes = document.querySelectorAll(".row-checkbox");
-                                const table = document.getElementById('keyword-table');
-                        
-                                let deleteMode = false;
-                        
-                                function normalizeTimeFormat(timeStr) {
-                                    return timeStr.replace(/a\.m\./, 'AM').replace(/p\.m\./, 'PM');
-                                }
-                        
-                                // Fonction pour mettre à jour l'état des cases à cocher
-                                function updateCheckboxes(checked) {
-                                    rowCheckboxes.forEach(checkbox => {
-                                        checkbox.checked = checked;
-                                    });
-                                }
-                        
-                                // Sélectionner/Désélectionner toutes les lignes
-                                selectAllCheckbox.addEventListener("change", function() {
-                                    updateCheckboxes(selectAllCheckbox.checked);
-                                });
-                        
-                                // Afficher/Masquer les cases à cocher et supprimer les lignes sélectionnées
-                                deleteButton.addEventListener("click", function() {
-                                    if (!deleteMode) {
-                                        table.classList.add('show-checkboxes');
-                                        deleteMode = true;
-                                    } else {
-                                        const selectedRows = document.querySelectorAll(".row-checkbox:checked");
-                                        const testDates = Array.from(selectedRows).map(checkbox => checkbox.closest("tr").getAttribute("data-test-date")).filter(Boolean);
-                                        const testTimes = Array.from(selectedRows).map(checkbox => checkbox.closest("tr").getAttribute("data-test-time")).filter(Boolean).map(normalizeTimeFormat);
-                        
-                                        // Vérifiez que les dates et les heures sont collectées
-                                        console.log('Collected test dates:', testDates);
-                                        console.log('Collected test times:', testTimes);
-                        
-                                        // Créer un FormData et ajouter les dates et les heures des tests
-                                        const formData = new FormData();
-                                        testDates.forEach(date => formData.append('test_dates[]', date));
-                                        testTimes.forEach(time => formData.append('test_times[]', time));
-                        
-                                        // Vérifiez le contenu de formData avant l'envoi
-                                        for (let pair of formData.entries()) {
-                                            console.log(pair[0] + ', ' + pair[1]);
-                                        }
-                        
-                                        // AJAX request to delete tests
-                                        fetch("{% url 'delete_tests' %}", {
-                                            method: 'POST',
-                                            headers: {
-                                                'X-CSRFToken': '{{ csrf_token }}'
-                                            },
-                                            body: formData
-                                        }).then(response => {
-                                            if (response.ok) {
-                                                selectedRows.forEach(checkbox => {
-                                                    checkbox.closest("tr").remove();
-                                                });
-                                                table.classList.remove('show-checkboxes');
-                                                deleteMode = false;
-                                            } else {
-                                                // Handle error
-                                                console.error('Failed to delete tests');
-                                            }
-                                        }).catch(error => {
-                                            console.error('Error:', error);
-                                        });
-                                    }
-                                });
-                            });
-
-                           // Filtrer les lignes du tableau en fonction du mot clé sélectionné
+                            // Filtrer les lignes du tableau en fonction du mot clé sélectionné
                             document.addEventListener("DOMContentLoaded", function() {
                                 const selectElement = document.getElementById('keyword-filter');
                                 const tableRows = document.querySelectorAll("#keyword-table tbody tr");
@@ -339,30 +267,103 @@
                                     }
                                 });
 
-                                // Initial rendering
-                                if (selectElement.value !== "") {
-                                    updateBarChart(selectElement.value);
-                                } else {
-                                    // Si aucun mot-clé n'est sélectionné par défaut, afficher le graphique avec tous les mots-clés
-                                    updateBarChartForAllKeywords();
-                                }
+                                // Affichage initial
+                                // updateBarChartForAllKeywords(); // Retiré ici pour éviter l'appel multiple
                             });
 
                             // Fonction pour mettre à jour le diagramme à barres pour tous les mots-clés
-                            function updateBarChartForAllKeywords() {
+                        function updateBarChartForAllKeywords() {
+                            const tableRows = document.querySelectorAll("#keyword-table tbody tr");
+                            const data = {};
+                            const colors = []; // Tableau pour stocker les couleurs des barres
+
+                            tableRows.forEach(row => {
+                                const cells = row.querySelectorAll("td[data-attribute]");
+                                cells.forEach(cell => {
+                                    const attribute = cell.getAttribute("data-attribute");
+                                    const value = parseFloat(cell.textContent.trim().split(" ")[0]);
+                                    if (!data[attribute]) {
+                                        data[attribute] = 0;
+                                    }
+                                    data[attribute] += value;
+                                });
+                            });
+
+                            const labels = Object.keys(data);
+                            const values = Object.values(data);
+
+                            // Génération des couleurs pour chaque série de données
+                            for (let i = 0; i < values.length; i++) {
+                                colors.push(getRandomColor());
+                            }
+
+                            var options = {
+                                series: [{
+                                    data: values,
+                                    colors: colors // Spécifier les couleurs pour chaque barre
+                                }],
+                                chart: {
+                                    type: 'bar',
+                                    height: 350
+                                },
+                                plotOptions: {
+                                    bar: {
+                                        horizontal: true
+                                    }
+                                },
+                                dataLabels: {
+                                    enabled: false
+                                },
+                                xaxis: {
+                                    categories: labels,
+                                    labels: {
+                                        formatter: function (value) {
+                                            return parseFloat(value).toFixed(2);
+                                        }
+                                    }
+                                }
+                            };
+
+                            // Vérifier s'il existe déjà un graphique
+                            var chartElement = document.querySelector("#bar-chart");
+                            if (chartElement.chart) {
+                                chartElement.chart.destroy();
+                            }
+
+                            var chart = new ApexCharts(chartElement, options);
+                            chart.render();
+                            chartElement.chart = chart; // Attacher le graphique à l'élément pour une utilisation ultérieure
+                        }
+
+                        // Fonction pour générer une couleur aléatoire
+                        function getRandomColor() {
+                            const letters = '0123456789ABCDEF';
+                            let color = '#';
+                            for (let i = 0; i < 6; i++) {
+                                color += letters[Math.floor(Math.random() * 16)];
+                            }
+                            return color;
+                        }
+
+
+                            // Fonction pour mettre à jour le diagramme à barres pour un mot-clé spécifique
+                            function updateBarChart(keyword) {
                                 const tableRows = document.querySelectorAll("#keyword-table tbody tr");
                                 const data = {};
 
                                 tableRows.forEach(row => {
-                                    const cells = row.querySelectorAll("td[data-attribute]");
-                                    cells.forEach(cell => {
-                                        const attribute = cell.getAttribute("data-attribute");
-                                        const value = parseFloat(cell.textContent.trim().split(" ")[0]);
-                                        if (!data[attribute]) {
-                                            data[attribute] = 0;
-                                        }
-                                        data[attribute] += value;
-                                    });
+                                    const keywordCell = row.querySelector("td:nth-child(3)");
+                                    if (keywordCell.textContent.trim() === keyword) {
+                                        const cells = row.querySelectorAll("td[data-attribute]");
+                                        cells.forEach(cell => {
+                                            const attribute = cell.getAttribute("data-attribute");
+                                            const value = parseFloat(cell.textContent.trim().split(" ")[0]);
+                                            if (!data[attribute]) {
+                                                data[attribute] = 0;
+                                            }
+                                            data[attribute] += value;
+                                        });
+                                    }
                                 });
 
                                 const labels = Object.keys(data);
@@ -385,24 +386,185 @@
                                         enabled: false
                                     },
                                     xaxis: {
-                                        categories: labels
+                                        categories: labels,
+                                        labels: {
+                                            formatter: function (value) {
+                                                return parseFloat(value).toFixed(2);
+                                            }
+                                        }
                                     }
                                 };
 
-                                var chart = new ApexCharts(document.querySelector("#bar-chart"), options);
+                                // Vérifier s'il existe déjà un graphique
+                                var chartElement = document.querySelector("#bar-chart");
+                                if (chartElement.chart) {
+                                    chartElement.chart.destroy();
+                                }
+
+                                var chart = new ApexCharts(chartElement, options);
                                 chart.render();
-
-                                chartInstance = chart; // Enregistre la nouvelle instance du graphique
+                                chartElement.chart = chart; // Attacher le graphique à l'élément pour une utilisation ultérieure
                             }
-
                         </script>
                         <div id="bar-chart"></div>
+                      
+                        <div id="pie-chart"></div>
+                        <script>
+                            // Fonction pour mettre à jour le diagramme camembert pour tous les mots-clés
+                            function updatePieChartForAllKeywords() {
+                                const tableRows = document.querySelectorAll("#keyword-table tbody tr");
+                                const data = {};
+                        
+                                tableRows.forEach(row => {
+                                    const cells = row.querySelectorAll("td[data-attribute]");
+                                    cells.forEach(cell => {
+                                        const attribute = cell.getAttribute("data-attribute");
+                                        const value = parseFloat(cell.textContent.trim().split(" ")[0]);
+                                        if (!isNaN(value)) {
+                                            if (!data[attribute]) {
+                                                data[attribute] = 0;
+                                            }
+                                            data[attribute] += value;
+                                        }
+                                    });
+                                });
+                        
+                                const labels = Object.keys(data);
+                                const values = Object.values(data);
+                        
+                                var options = {
+                                    series: values,
+                                    labels: labels,
+                                    chart: {
+                                        type: 'pie',
+                                        width: '80%',
+                                        height: 'auto'
+                                    },
+                                    plotOptions: {
+                                        pie: {
+                                            expandOnClick: false
+                                        }
+                                    },
+                                    dataLabels: {
+                                        enabled: true
+                                    },
+                                    legend: {
+                                        position: 'bottom'
+                                    }
+                                };
+                        
+                                // Vérifier l'existence de l'élément pie-chart
+                                var pieChartElement = document.querySelector("#pie-chart");
+                                if (!pieChartElement) {
+                                    console.error("Element with ID 'pie-chart' not found.");
+                                    return;
+                                }
+                        
+                                // Détruire le graphique existant s'il existe
+                                if (pieChartElement.chart) {
+                                    pieChartElement.chart.destroy();
+                                }
+                        
+                                // Créer un nouveau diagramme camembert
+                                var chart = new ApexCharts(pieChartElement, options);
+                                chart.render();
+                                pieChartElement.chart = chart; // Attacher le graphique à l'élément pour une utilisation ultérieure
+                            }
+                        
+                            // Fonction pour mettre à jour le diagramme camembert pour un mot-clé spécifique
+                            function updatePieChart(keyword) {
+                                const tableRows = document.querySelectorAll("#keyword-table tbody tr");
+                                const data = {};
+                        
+                                tableRows.forEach(row => {
+                                    const keywordCell = row.querySelector("td:nth-child(3)");
+                                    if (keywordCell.textContent.trim() === keyword) {
+                                        const cells = row.querySelectorAll("td[data-attribute]");
+                                        cells.forEach(cell => {
+                                            const attribute = cell.getAttribute("data-attribute");
+                                            const value = parseFloat(cell.textContent.trim().split(" ")[0]);
+                                            if (!isNaN(value)) {
+                                                if (!data[attribute]) {
+                                                    data[attribute] = 0;
+                                                }
+                                                data[attribute] += value;
+                                            }
+                                        });
+                                    }
+                                });
+                        
+                                const labels = Object.keys(data);
+                                const values = Object.values(data);
+                        
+                                var options = {
+                                    series: values,
+                                    labels: labels,
+                                    chart: {
+                                        type: 'pie',
+                                        width: '80%',
+                                        height: 'auto'
+                                    },
+                                    plotOptions: {
+                                        pie: {
+                                            expandOnClick: false
+                                        }
+                                    },
+                                    dataLabels: {
+                                        enabled: true
+                                    },
+                                    legend: {
+                                        position: 'bottom'
+                                    }
+                                };
+                        
+                                // Vérifier l'existence de l'élément pie-chart
+                                var pieChartElement = document.querySelector("#pie-chart");
+                                if (!pieChartElement) {
+                                    console.error("Element with ID 'pie-chart' not found.");
+                                    return;
+                                }
+                        
+                                // Détruire le graphique existant s'il existe
+                                if (pieChartElement.chart) {
+                                    pieChartElement.chart.destroy();
+                                }
+                        
+                                // Créer un nouveau diagramme camembert
+                                var chart = new ApexCharts(pieChartElement, options);
+                                chart.render();
+                                pieChartElement.chart = chart; // Attacher le graphique à l'élément pour une utilisation ultérieure
+                            }
+                        
+                            document.addEventListener('DOMContentLoaded', function() {
+                                updateBarChartForAllKeywords();
+                                updatePieChartForAllKeywords(); // Afficher le piechart par défaut
+                            });
+                        
+                            const selectElement = document.getElementById('keyword-filter');
+                            selectElement.addEventListener('change', function() {
+                                const selectedKeyword = this.value;
+                        
+                                if (selectedKeyword !== "") {
+                                    updatePieChart(selectedKeyword);
+                                } else {
+                                    updatePieChartForAllKeywords();
+                                }
+                            });
+                        </script>
+                        
+                       
+
                     </div>
                 </div>
             </div>
-    </div>
+            
+        </div>
     <script src="{% static 'path/to/bootstrap.bundle.min.js' %}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script> 
+     <!-- Include Bootstrap JS -->
+     <script src="path/to/bootstrap.bundle.min.js"></script>
+     <!-- Include ApexCharts JS -->
+    
+    
 </body>
 </html>
-
