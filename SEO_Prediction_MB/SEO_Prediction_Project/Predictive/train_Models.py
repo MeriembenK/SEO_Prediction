@@ -308,23 +308,22 @@ class TrainModels:
 
     
     def Final_get_importance(self, user_instance): 
-        
         test_instance = Test()
         test_instance = Test(user=user_instance)
 
         test_instance.Keyword = self.keyword
         test_instance.nb_url = self.df.shape[0]
         X_train, y_train, X_test, y_test = self.oversampling_Smote()
-        print("nb ligne de trainer.df est ",self.df.shape[0])
-        stack_model, X_test_stack, y_test_stack, Model1, Model2, Model3, Model4, Model5= self.train_and_evaluate_stacking(X_train, y_train, X_test, y_test, n_folds=5)
-        auc, acc= self.eval_model(stack_model, X_test_stack, y_test_stack)
+        print("nb ligne de trainer.df est ", self.df.shape[0])
+        stack_model, X_test_stack, y_test_stack, Model1, Model2, Model3, Model4, Model5 = self.train_and_evaluate_stacking(X_train, y_train, X_test, y_test, n_folds=5)
+        auc, acc = self.eval_model(stack_model, X_test_stack, y_test_stack)
         print(auc)
-        print("The accuracy",acc)
+        print("The accuracy", acc)
         test_instance.precision = acc
 
         df_importance = self.get_importance_level1(stack_model)
         print(df_importance)
-        
+
         # Triez le DataFrame par score en ordre décroissant
         df_sorted = df_importance.sort_values(by='score', ascending=False)
 
@@ -332,33 +331,37 @@ class TrainModels:
         best_model_name = df_sorted.iloc[0]['variable']
 
         if best_model_name == 'Model1':
-          df_model = self.get_importance(Model1)
+            df_model = self.get_importance(Model1)
         elif best_model_name == 'Model2':
-          df_model = self.get_importance(Model2)
+            df_model = self.get_importance(Model2)
         elif best_model_name == 'Model3':
-          df_model = self.get_importance(Model3)
+            df_model = self.get_importance(Model3)
         elif best_model_name == 'Model4':
-          df_model = self.get_importance(Model4)
+            df_model = self.get_importance(Model4)
         elif best_model_name == 'Model5':
-          df_model = self.get_importance(Model5)
+            df_model = self.get_importance(Model5)
         else:
-        # Gérez le cas où best_model_name n'est pas l'un des modèles connus
-         raise ValueError("Nom de modèle inconnu")
-        
+            # Gérez le cas où best_model_name n'est pas l'un des modèles connus
+            raise ValueError("Nom de modèle inconnu")
+
         print("Attributs de la classe Test :", dir(Test))
 
         for variable, score in zip(df_model['variable'], df_model['score']):
-           #print(f"Variable : {variable}, Score : {score}")
-           variable_with_spaces = self.replace_underscore_with_space(variable)  # Passer variable comme argument
-           # Assurez-vous que le nom de la variable correspond à un attribut de la classe Test
-           if hasattr(test_instance, variable_with_spaces):
-              # Assurez-vous que la colonne 'variable' est une colonne valide de la classe Test
-              setattr(test_instance, variable_with_spaces, score)
-           else:
-              print(f"La variable {variable_with_spaces} n'est pas un attribut de la classe Test.")
-              
-        test_instance.date_test = timezone.now()
+            #print(f"Variable : {variable}, Score : {score}")
+            variable_with_spaces = self.replace_underscore_with_space(variable)  # Passer variable comme argument
+            # Assurez-vous que le nom de la variable correspond à un attribut de la classe Test
+            if hasattr(test_instance, variable_with_spaces):
+                # Assurez-vous que la colonne 'variable' est une colonne valide de la classe Test
+                setattr(test_instance, variable_with_spaces, score)
+            else:
+                print(f"La variable {variable_with_spaces} n'est pas un attribut de la classe Test.")
+
+        # Assignez la date et l'heure actuelles
+        current_time = timezone.now()
+        test_instance.date_test = current_time.date()
+        test_instance.hour_test = current_time.time()
         test_instance.save()
+        
         pd.set_option('display.max_rows', None)
         pd.set_option('display.max_columns', None)
         # Affichez le DataFrame

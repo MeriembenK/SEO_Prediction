@@ -6,7 +6,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{% static 'path/to/bootstrap.min.css' %}">
     <style>
-        /* Vos styles CSS ici */
+        /* Styles CSS */
+        .table-responsive {
+            overflow-x: auto;
+        }
+        .table th, .table td {
+            white-space: nowrap;
+            border-right: 1px solid #ddd; /* Ligne verticale entre les colonnes */
+        }
+        .table th:last-child, .table td:last-child {
+            border-right: none; /* Retirer la ligne verticale de la dernière colonne */
+        }
+        .delete {
+            margin-left: 600px;
+        }
+        /* Cacher les cases à cocher par défaut */
+        .row-checkbox, .header-checkbox {
+            display: none;
+        }
+        .show-checkboxes .row-checkbox {
+            display: inline-block;
+        }
+        #bar-chart {
+            margin-top: 20px;
+        }
     </style>
     <title>SEO Prediction</title>
 </head>
@@ -24,71 +47,362 @@
                                     <i class="icon-more-alt"></i>
                                 </button>
                                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userdropdown">
-                                    <a class="dropdown-item" href="#">Weekly</a>
-                                    <a class="dropdown-item" href="#">Monthly</a>
-                                    <a class="dropdown-item" href="#">Yearly</a>
+                                    <a class="dropdown-item filter-option" href="#" data-filter="weekly">Weekly</a>
+                                    <a class="dropdown-item filter-option" href="#" data-filter="monthly">Monthly</a>
+                                    <a class="dropdown-item filter-option" href="#" data-filter="yearly">Yearly</a>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="card-body py-lg-3">
-                        <!-- Tableau pour afficher les données des tests -->
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Keyword</th>
-                                    <th>nb_url</th>
-                                    <th>Precision</th>
-                                    <th>Ttfb_babbar_score</th>
-                                    <th>MinMax Values</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                        <!-- Filtrer selon le mot clé -->
+                        <div class="mb-3">
+                            <label for="keyword-filter" class="form-label">Filter by keyword</label>
+                            <select class="form-select" id="keyword-filter" style="width: 250px;">
+                                <option value="">Keywords</option>
+                            </select>
+                            <div id="keywords-container" style="display:none;">
                                 {% for test in tests_with_min_max_values %}
-                                    <tr>
-                                        <td>{{ test.id }}</td>
-                                        <td>{{ test.keyword }}</td>
-                                        <td>{{ test.nb_url }}</td>
-                                        <td>{{ test.precision }}</td>
-                                        <td>{{ test.Ttfb_babbar_score }}</td>
-                                        <td>
-                                            <!-- Boucle pour afficher les valeurs min/max -->
-                                            {% for min_max_value in test.min_max_values %}
-                                                {{ min_max_value.attribute_name }}: {{ min_max_value.attribute_value }} ({{ min_max_value.min_max }})
-                                                <br>
-                                            {% endfor %}
-                                        </td>
-                                    </tr>
+                                    <span class="keyword">{{ test.keyword }}</span>
                                 {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Section "Graphique" -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header card-no-border pb-0">
-                        <div class="header-top">
-                            <h5>Graphique</h5>
+                            </div>
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const keywordsContainer = document.getElementById('keywords-container');
+                                    const selectElement = document.getElementById('keyword-filter');
+                                    const keywords = Array.from(keywordsContainer.getElementsByClassName('keyword'));
+                                    const uniqueKeywords = new Set();
+                                    
+                                    keywords.forEach(keywordElement => {
+                                        uniqueKeywords.add(keywordElement.textContent.trim());
+                                    });
+                                    
+                                    uniqueKeywords.forEach(keyword => {
+                                        const option = document.createElement('option');
+                                        option.value = keyword;
+                                        option.textContent = keyword;
+                                        selectElement.appendChild(option);
+                                    });
+                                    
+                                    // Select the first keyword by default and update the chart
+                                    if (selectElement.options.length > 1) {
+                                        selectElement.selectedIndex = 0;
+                                        updateBarChart(selectElement.options[0].value);
+                                    }
+                                });
+                            </script>
                         </div>
-                    </div>
-                    <div class="card-body py-lg-3">
-                        <!-- Conteneur du graphique -->
-                        <div id="chart-container">
-                            <!-- ApexCharts ou autre bibliothèque de graphiques -->
+                        <div class="delete">
+                            <button id="delete-selected" class="btn btn-danger" style="margin-left: 10px;">Delete</button>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                        <!-- Tableau pour afficher les données des tests -->
+                        <div class="table-responsive">
+                            <table class="table" id="keyword-table">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox" class="header-checkbox"></th> <!-- Checkbox pour sélectionner tout -->
+                                        <th>Date</th>
+                                        <th>Keyword</th>
+                                        <th>nb_url</th>
+                                        <th>Precision</th>
+                                        {% for attribute in attribute_names %}
+                                            {% if attribute != 'id' and attribute != 'nb url' and attribute != 'precision' %}
+                                                <th>{{ attribute }} (Min_Max)</th>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for test in tests_with_min_max_values %}
+                                        <tr data-test-date="{{ test.date_test }}" data-test-time="{{ test.hour_test }}">
+                                            <td class="custom-checkbox">
+                                                <input type="checkbox" class="row-checkbox">
+                                                <span class="checkmark"></span>
+                                            </td>
+                                            <td>{{ test.date_test }}</td>
+                                            <td>{{ test.keyword }}</td>
+                                            <td>{{ test.nb_url }}</td>
+                                            <td>{{ test.precision|floatformat:2 }}</td>
+                                            {% for attribute in attribute_names %}
+                                                {% if attribute != 'id' and attribute != 'nb url' and attribute != 'precision' %}
+                                                    <td data-attribute="{{ attribute }}">
+                                                        {% for min_max_value in test.min_max_values %}
+                                                            {% if min_max_value.attribute_name == attribute %}
+                                                                {{ min_max_value.attribute_value|floatformat:2 }} ({{ min_max_value.min_max }})
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </td>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-container">
+                            <button id="prev" class="btn btn-primary">Previous</button>
+                            <button id="next" class="btn btn-primary">Next</button>
+                        </div>
+                        <script>
+                            document.addEventListener("DOMContentLoaded", function() {
+                                const rows = Array.from(document.querySelectorAll("#keyword-table tbody tr"));
+                                const rowsPerPage = 10;
+                                let currentPage = 1;
 
-    <!-- Scripts -->
+                                function displayRows(page) {
+                                    const start = (page - 1) * rowsPerPage;
+                                    const end = page * rowsPerPage;
+
+                                    rows.forEach((row, index) => {
+                                        if (index >= start && index < end) {
+                                            row.style.display = '';
+                                        } else {
+                                            row.style.display = 'none';
+                                        }
+                                    });
+
+                                    document.getElementById("prev").disabled = page === 1;
+                                    document.getElementById("next").disabled = end >= rows.length;
+                                }
+
+                                document.getElementById("prev").addEventListener("click", () => {
+                                    if (currentPage > 1) {
+                                        currentPage--;
+                                        displayRows(currentPage);
+                                    }
+                                });
+
+                                document.getElementById("next").addEventListener("click", () => {
+                                    if (currentPage * rowsPerPage < rows.length) {
+                                        currentPage++;
+                                        displayRows(currentPage);
+                                    }
+                                });
+
+                                // Initial display
+                                displayRows(currentPage);
+                            });
+                        </script>
+                        <script>
+                            document.addEventListener("DOMContentLoaded", function() {
+                                const deleteButton = document.getElementById("delete-selected");
+                                const rowCheckboxes = document.querySelectorAll(".row-checkbox");
+                                const table = document.getElementById('keyword-table');
+
+                                let deleteMode = false;
+
+                                // Afficher/Masquer les cases à cocher et supprimer les lignes sélectionnées
+                                deleteButton.addEventListener("click", function() {
+                                    const selectedRows = document.querySelectorAll(".row-checkbox:checked");
+
+                                    if (!deleteMode) {
+                                        table.classList.add('show-checkboxes');
+                                        deleteMode = true;
+                                    } else {
+                                        if (selectedRows.length > 0) {
+                                            const testDates = Array.from(selectedRows).map(checkbox => checkbox.closest("tr").getAttribute("data-test-date")).filter(Boolean);
+                                            const testTimes = Array.from(selectedRows).map(checkbox => checkbox.closest("tr").getAttribute("data-test-time")).filter(Boolean).map(normalizeTimeFormat);
+
+                                            // Créer un FormData et ajouter les dates et les heures des tests
+                                            const formData = new FormData();
+                                            testDates.forEach(date => formData.append('test_dates[]', date));
+                                            testTimes.forEach(time => formData.append('test_times[]', time));
+
+                                            // AJAX request to delete tests
+                                            fetch("{% url 'delete_tests' %}", {
+                                                method: 'POST',
+                                                headers: {
+                                                    'X-CSRFToken': '{{ csrf_token }}'
+                                                },
+                                                body: formData
+                                            }).then(response => {
+                                                if (response.ok) {
+                                                    selectedRows.forEach(checkbox =>                                                    {
+                                                        checkbox.closest("tr").remove();
+                                                    });
+                                                    table.classList.remove('show-checkboxes');
+                                                    deleteMode = false;
+                                                } else {
+                                                    console.error('Failed to delete tests');
+                                                }
+                                            }).catch(error => {
+                                                console.error('Error:', error);
+                                            });
+                                        } else {
+                                            table.classList.remove('show-checkboxes');
+                                            deleteMode = false;
+                                        }
+                                    }
+                                });
+                                
+                                function normalizeTimeFormat(timeStr) {
+                                    return timeStr.replace(/a\.m\./, 'AM').replace(/p\.m\./, 'PM');
+                                }
+                            });
+                        </script>
+                        <script>
+                            document.addEventListener("DOMContentLoaded", function() {
+                                const deleteButton = document.getElementById("delete-selected");
+                                const selectAllCheckbox = document.getElementById("select-all");
+                                const rowCheckboxes = document.querySelectorAll(".row-checkbox");
+                                const table = document.getElementById('keyword-table');
+                        
+                                let deleteMode = false;
+                        
+                                function normalizeTimeFormat(timeStr) {
+                                    return timeStr.replace(/a\.m\./, 'AM').replace(/p\.m\./, 'PM');
+                                }
+                        
+                                // Fonction pour mettre à jour l'état des cases à cocher
+                                function updateCheckboxes(checked) {
+                                    rowCheckboxes.forEach(checkbox => {
+                                        checkbox.checked = checked;
+                                    });
+                                }
+                        
+                                // Sélectionner/Désélectionner toutes les lignes
+                                selectAllCheckbox.addEventListener("change", function() {
+                                    updateCheckboxes(selectAllCheckbox.checked);
+                                });
+                        
+                                // Afficher/Masquer les cases à cocher et supprimer les lignes sélectionnées
+                                deleteButton.addEventListener("click", function() {
+                                    if (!deleteMode) {
+                                        table.classList.add('show-checkboxes');
+                                        deleteMode = true;
+                                    } else {
+                                        const selectedRows = document.querySelectorAll(".row-checkbox:checked");
+                                        const testDates = Array.from(selectedRows).map(checkbox => checkbox.closest("tr").getAttribute("data-test-date")).filter(Boolean);
+                                        const testTimes = Array.from(selectedRows).map(checkbox => checkbox.closest("tr").getAttribute("data-test-time")).filter(Boolean).map(normalizeTimeFormat);
+                        
+                                        // Vérifiez que les dates et les heures sont collectées
+                                        console.log('Collected test dates:', testDates);
+                                        console.log('Collected test times:', testTimes);
+                        
+                                        // Créer un FormData et ajouter les dates et les heures des tests
+                                        const formData = new FormData();
+                                        testDates.forEach(date => formData.append('test_dates[]', date));
+                                        testTimes.forEach(time => formData.append('test_times[]', time));
+                        
+                                        // Vérifiez le contenu de formData avant l'envoi
+                                        for (let pair of formData.entries()) {
+                                            console.log(pair[0] + ', ' + pair[1]);
+                                        }
+                        
+                                        // AJAX request to delete tests
+                                        fetch("{% url 'delete_tests' %}", {
+                                            method: 'POST',
+                                            headers: {
+                                                'X-CSRFToken': '{{ csrf_token }}'
+                                            },
+                                            body: formData
+                                        }).then(response => {
+                                            if (response.ok) {
+                                                selectedRows.forEach(checkbox => {
+                                                    checkbox.closest("tr").remove();
+                                                });
+                                                table.classList.remove('show-checkboxes');
+                                                deleteMode = false;
+                                            } else {
+                                                // Handle error
+                                                console.error('Failed to delete tests');
+                                            }
+                                        }).catch(error => {
+                                            console.error('Error:', error);
+                                        });
+                                    }
+                                });
+                            });
+
+                           // Filtrer les lignes du tableau en fonction du mot clé sélectionné
+                            document.addEventListener("DOMContentLoaded", function() {
+                                const selectElement = document.getElementById('keyword-filter');
+                                const tableRows = document.querySelectorAll("#keyword-table tbody tr");
+
+                                selectElement.addEventListener('change', function() {
+                                    const selectedKeyword = this.value;
+
+                                    tableRows.forEach(row => {
+                                        const keywordCell = row.querySelector("td:nth-child(3)");
+                                        if (selectedKeyword === "" || keywordCell.textContent === selectedKeyword) {
+                                            row.style.display = "";
+                                        } else {
+                                            row.style.display = "none";
+                                        }
+                                    });
+
+                                    if (selectedKeyword !== "") {
+                                        updateBarChart(selectedKeyword);
+                                    } else {
+                                        // Si aucun mot-clé n'est sélectionné, afficher le graphique avec tous les mots-clés
+                                        updateBarChartForAllKeywords();
+                                    }
+                                });
+
+                                // Initial rendering
+                                if (selectElement.value !== "") {
+                                    updateBarChart(selectElement.value);
+                                } else {
+                                    // Si aucun mot-clé n'est sélectionné par défaut, afficher le graphique avec tous les mots-clés
+                                    updateBarChartForAllKeywords();
+                                }
+                            });
+
+                            // Fonction pour mettre à jour le diagramme à barres pour tous les mots-clés
+                            function updateBarChartForAllKeywords() {
+                                const tableRows = document.querySelectorAll("#keyword-table tbody tr");
+                                const data = {};
+
+                                tableRows.forEach(row => {
+                                    const cells = row.querySelectorAll("td[data-attribute]");
+                                    cells.forEach(cell => {
+                                        const attribute = cell.getAttribute("data-attribute");
+                                        const value = parseFloat(cell.textContent.trim().split(" ")[0]);
+                                        if (!data[attribute]) {
+                                            data[attribute] = 0;
+                                        }
+                                        data[attribute] += value;
+                                    });
+                                });
+
+                                const labels = Object.keys(data);
+                                const values = Object.values(data);
+
+                                var options = {
+                                    series: [{
+                                        data: values
+                                    }],
+                                    chart: {
+                                        type: 'bar',
+                                        height: 350
+                                    },
+                                    plotOptions: {
+                                        bar: {
+                                            horizontal: true
+                                        }
+                                    },
+                                    dataLabels: {
+                                        enabled: false
+                                    },
+                                    xaxis: {
+                                        categories: labels
+                                    }
+                                };
+
+                                var chart = new ApexCharts(document.querySelector("#bar-chart"), options);
+                                chart.render();
+
+                                chartInstance = chart; // Enregistre la nouvelle instance du graphique
+                            }
+
+                        </script>
+                        <div id="bar-chart"></div>
+                    </div>
+                </div>
+            </div>
+    </div>
     <script src="{% static 'path/to/bootstrap.bundle.min.js' %}"></script>
-    <!-- Ajoutez votre script de graphique ici -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 </body>
 </html>
+

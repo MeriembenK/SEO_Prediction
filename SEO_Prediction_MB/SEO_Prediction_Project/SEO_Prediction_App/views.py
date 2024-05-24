@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate
 from django.contrib.auth import login, logout
+from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
 from django.http.response import HttpResponseRedirect
@@ -17,14 +18,13 @@ from django.db.models import Max
 from django.contrib.auth import get_user_model
 from django.utils.functional import SimpleLazyObject
 from django.http import JsonResponse
-import plotly.express as px
-import pandas as pd
 import json
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
+from datetime import datetime
+from django.utils.dateparse import parse_datetime
+
 
 
 # Create your views here.
@@ -271,22 +271,18 @@ def handle_keyword(request):
     
     
     
+@login_required(login_url="/login_home")
 def general_widget(request):
-    # Assurez-vous que l'utilisateur est authentifié
     if request.user.is_authenticated:
-        # Récupérez l'utilisateur connecté
         user = request.user
-
-        # Récupérez tous les tests de l'utilisateur connecté avec leurs valeurs min/max associées
         all_tests = Test.objects.filter(user=user).prefetch_related('min_max_values')
-
-        # Créez une liste pour stocker les tests avec leurs valeurs min/max associées
         tests_with_min_max_values = []
+        attribute_names = set()
 
-        # Bouclez à travers chaque test et formatez les données
         for test in all_tests:
             test_data = {
-                'id': test.id,
+                'date_test': test.date_test,
+                'hour_test': test.hour_test,
                 'keyword': test.Keyword,
                 'nb_url': test.nb_url,
                 'precision': test.precision,
@@ -294,31 +290,91 @@ def general_widget(request):
                 'min_max_values': []
             }
 
-            # Ajoutez les valeurs min/max associées à ce test
             for min_max_value in test.min_max_values.all():
                 test_data['min_max_values'].append({
                     'attribute_name': min_max_value.attribute_name,
                     'attribute_value': min_max_value.attribute_value,
                     'min_max': min_max_value.min_max
                 })
+                attribute_names.add(min_max_value.attribute_name)
 
-            # Ajoutez le test formaté à la liste des tests
             tests_with_min_max_values.append(test_data)
 
-        # Envoyez les données formatées au frontend
+        attribute_names = sorted(attribute_names)
+
         context = {
             "breadcrumb": {
                 "parent": "Widgets",
                 "child": "General"
             },
-            "tests_with_min_max_values": tests_with_min_max_values
+            "tests_with_min_max_values": tests_with_min_max_values,
+            "attribute_names": attribute_names
         }
 
         return render(request, "general/widget/general-widget/general-widget.html", context)
     else:
-        # Gérez le cas où l'utilisateur n'est pas authentifié
-        # Redirigez l'utilisateur vers la page de connexion ou affichez un message d'erreur
         return render(request, "login_required_error.html")
+
+
+@login_required(login_url="/login_home")
+@require_POST
+def delete_tests(request):
+    test_dates = request.POST.getlist('test_dates[]')
+    test_times = request.POST.getlist('test_times[]')
+
+    # Ajoutez du journal de débogage pour vérifier les données reçues
+    print('Received test dates:', test_dates)
+    print('Received test times:', test_times)
+
+    if not (test_dates and test_times) or len(test_dates) != len(test_times):
+        return JsonResponse({'status': 'error', 'message': 'Mismatch or missing dates/times'}, status=400)
+
+    test_datetime_pairs = []
+    for test_date, test_time in zip(test_dates, test_times):
+        try:
+            # Stripping any leading/trailing whitespace
+            test_date = test_date.strip()
+            test_time = test_time.strip()
+
+            # Normalize time format
+            test_time = test_time.replace("a.m.", "AM").replace("p.m.", "PM")
+
+            # Attempt to parse date and time with proper formats
+            date_obj = datetime.strptime(test_date, '%B %d, %Y').date()
+            time_obj = datetime.strptime(test_time, '%I:%M %p').time()
+
+            # If parsing is successful, add to the list of valid date-time pairs
+            test_datetime_pairs.append((date_obj, time_obj))
+        except ValueError as e:
+            print(f"Invalid date or time format for {test_date} {test_time}: {e}")
+
+    if test_datetime_pairs:
+        for date_obj, time_obj in test_datetime_pairs:
+            # Debugging log to verify deletion process
+            print(f"Attempting to delete Test entry with date: {date_obj} and time: {time_obj}")
+
+            # Fetching the Test objects to verify
+            tests_to_delete = Test.objects.filter(
+                date_test=date_obj,
+                hour_test__hour=time_obj.hour,
+                hour_test__minute=time_obj.minute,
+                user=request.user
+            )
+            print(f"Found {tests_to_delete.count()} entries to delete")
+
+            for test in tests_to_delete:
+                print(f"Test found: {test.date_test} {test.hour_test}")
+
+            if tests_to_delete.exists():
+                deleted_count, _ = tests_to_delete.delete()
+                print(f"Deleted {deleted_count} entries")
+            else:
+                print(f"No entries found for date: {date_obj} and time: {time_obj}")
+
+        return JsonResponse({'status': 'success'})
+    else:
+        return JsonResponse({'status': 'error', 'message': 'No valid dates/times provided'}, status=400)
+    
 
 @login_required(login_url="/login_home")
 def dashboard_02(request):

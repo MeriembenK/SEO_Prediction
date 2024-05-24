@@ -21,6 +21,7 @@ urlpatterns = [
 
     # #-----------------------Widgets
     path('general_widget', views.general_widget, name="general_widget"),
+    path('delete-tests/', views.delete_tests, name='delete_tests'),
     path('chart_widget', views.chart_widget, name="chart_widget"),
 
     #------------------------Layout

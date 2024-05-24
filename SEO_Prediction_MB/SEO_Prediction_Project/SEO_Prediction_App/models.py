@@ -263,6 +263,7 @@ class Test(models.Model):
     H2_1_score_score = models.FloatField(null=True) # H2_1_score_score
     H2_2_score_score = models.FloatField(null=True) # H2_2_score_score
     date_test = models.DateField(null=True)
+    hour_test = models.TimeField(null=True) 
 
 class Data_Url(models.Model):
     
