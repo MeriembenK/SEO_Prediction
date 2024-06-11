@@ -34,14 +34,55 @@ class TrainModels:
         self.X_train_stack = None
         self.keyword= None
 
+    def read_my_data_for_url(self):
+        colonnes_exclues = ['id','Position','Url_Score', 'HTTP_Version','Http_code_babbar','Thekeyword','Content_type','Status_code','Status','Indexability_x','Indexability_status_x'
+                            ,'X_robots_tag1','Meta_Robots_1_score','Meta_Refresh_1','Canonical_link_element1','rel_next_1','rel_prev_1','HTTP_rel_next_1','HTTP_rel_prev_1','amphtml_link_element',
+                              'Readability','Link_score','Closest_Similarity_Match','NoNear_Duplicates','Spelling_Errors','Grammar_Errors','Hash','Last_modified','Redirect_URL',
+                              'Redirect_type','Cookies','URL_Encoded_Address','Crawl_Timestamp','Type_1','Indexability_y','Indexability_Status_y', 'Date_added']
+        toutes_colonnes = [f.name for f in Data._meta.get_fields()]
+        colonnes_incluses = [nom_colonne for nom_colonne in toutes_colonnes if nom_colonne not in colonnes_exclues]
+        
+        # Filtrer les données avec Keyword=self.keyword
+        data_queryset = Data.objects.all().values(*colonnes_incluses)
+        self.df = pd.DataFrame.from_records(data_queryset) 
+        self.df = self.df.convert_dtypes()
+        
+        float_columns = [ 'Ttfb_babbar', 'Page_value_babbar', 'Page_trust_babbar', 'Semantic_value_babbar', 'Backlinks_babbar', 'Backlinks_host_babbar'
+                         , 'Host_outlinks_babbar', 'Outlinks_babbar', 'Desktop_first_contentful_paint_terrain', 'Desktop_cumulative_layout_shift_terrain', 'Desktop_first_contentful_paint_lab',
+                         'Desktop_largest_contentful_paint_lab','Desktop_speed_index_lab', 'SOSEO_yourtext_guru', 'DSEO_yourtext_guru', 'Word_count', 'Sentence_Count', 'Flesch_reading_ease_score', 'H1_2_length',
+                         'Crawl_depth', 'Inlinks', 'Unique_inlinks', 'H2_2_score', 'H2_1_score', 'H1_1_score', 'Meta_Keywords1_score', 'Meta_Description1_score', 'Total_Types',
+                         'Warnings', 'Unique_External_JS_Outlinks', 'Unique_External_Outlinks', 'External_Outlinks', 'Unique_Outlinks', 'of_Total', 'Desktop_cumulative_layout_shift_lab',
+                         'Desktop_largest_contentful_paint_terrain', 'Desktop_first_input_delay_terain', 'Desktop_time_to_interactive_lab', 'Outlinks', 'Title1_pixel_width', 'Title2', 'Title2_length', 'H1_1_length', 'H2_2_length',
+                         'Title2_pixel_width', 'Meta_description1', 'Meta_description1_Pixel_width', 'Meta_description2', 'Meta_description2_length', 'Meta_keywords1_length', 'H2_1_length',
+                           'Meta_description2_Pixel_width', 'Meta_Keywords1', 'H1_1','H1_2', 'H2_1', 'H2_2', 'Average_words_per_sentence', 'Response_time', 'Unique_JS_inlinks', 'Unique_JS_Outlinks', 'Errors', 
+                           'Unique_Types', 'Meta_robots_1', 'Meta_robots_2', 'Meta_robots_3', 'Canonical_link_element2', 'Text_ratio']
+        
+        self.df[float_columns] = self.df[float_columns].apply(pd.to_numeric, errors='coerce')
+        self.df[float_columns].fillna(0, inplace=True)
+        
+        columns_to_convert = ['H1_2_score','H2_2_score','H2_2', 'Size_bytes','Word_count','Sentence_Count','Inlinks','Mobile_first_contentful_paint_terrain', 'Mobile_first_input_delay_terain',
+                              'Mobile_largest_contentful_paint_terrain', 'H2_1_score', 'H1_1_score', 'Meta_Keywords1_score', 'Meta_Description1_score', 'Title1_score', 'Unique_Types',
+                               'Total_Types', 'Errors', 'Unique_External_JS_Outlinks', 'Unique_External_Outlinks', 'External_Outlinks', 'Unique_JS_Outlinks', 'Warnings', 'of_Total', 'Unique_JS_inlinks',
+                                'Unique_inlinks', 'Crawl_depth', 'Flesch_reading_ease_score', 'Average_words_per_sentence', 'Meta_description1_Pixel_width', 'Title1_pixel_width', 'DSEO_yourtext_guru',
+                                'SOSEO_yourtext_guru', 'Desktop_cumulative_layout_shift_lab', 'Desktop_largest_contentful_paint_lab', 'Desktop_first_contentful_paint_lab', 'Title1', 'Title1_length', 
+                                'Desktop_cumulative_layout_shift_terrain', 'Desktop_largest_contentful_paint_terrain', 'Desktop_first_input_delay_terain', 'Desktop_first_contentful_paint_terrain',
+                                'Outlinks_babbar', 'Host_outlinks_babbar', 'Backlinks_host_babbar', 'Backlinks_babbar', 'Semantic_value_babbar', 'Page_trust_babbar', 'Page_value_babbar', 'Ttfb_babbar',
+                               'Desktop_total_blocking_time_lab','Outlinks','Mobile_cumulative_layout_shift_terrain', 'Mobile_first_contentful_paint_lab', 'Mobile_cumulative_layout_shift_lab',
+                               'Mobile_speed_index_lab', 'Mobile_largest_contentful_paint_lab','Unique_Outlinks', 'Mobile_time_to_interactive_lab', 'Mobile_total_blocking_time_lab', 'Score_1fr',
+                               'Meta_description1_length', 'Text_ratio' ]
+        
+        for column in columns_to_convert:
+            # Conversion en float avec gestion des colonnes catégoriques
+            self.df[column] = pd.to_numeric(self.df[column], errors='coerce', downcast='float')
+            if pd.api.types.is_categorical_dtype(self.df[column]):
+                self.df[column] = pd.to_numeric(self.df[column], errors='coerce', downcast='float')
 
+        return self.df
     #Lecture de la data depuis la BDD, en ignorant certaines colonnes, en faisant la conversion de certaines colonne de type object au type float et gestion des colonnes catégoriques
     def read_my_data(self):
 
-    
-        colonnes_exclues = ['id','Keyword','Position','Url_Score', 'HTTP_Version','Http_code_babbar','Thekeyword','Url','Content_type','Status_code','Status','Indexability_x','Indexability_status_x'
-
-                            ,'X_robots_tag1','Meta_Robots_1_score','Meta_Refresh_1','Canonical_link_element1','rel_next_1','rel_prev_1','HTTP_rel_next_1','HTTP_rel_prev_1','amphtml_link_element',
+        colonnes_exclues = ['id','Position','Url_Score', 'HTTP_Version','Http_code_babbar','Thekeyword','Content_type','Status_code','Status','Indexability_x','Indexability_status_x'
+                              ,'X_robots_tag1','Meta_Robots_1_score','Meta_Refresh_1','Canonical_link_element1','rel_next_1','rel_prev_1','HTTP_rel_next_1','HTTP_rel_prev_1','amphtml_link_element',
                               'Readability','Link_score','Closest_Similarity_Match','NoNear_Duplicates','Spelling_Errors','Grammar_Errors','Hash','Last_modified','Redirect_URL',
                               'Redirect_type','Cookies','URL_Encoded_Address','Crawl_Timestamp','Type_1','Indexability_y','Indexability_Status_y', 'Date_added']
         toutes_colonnes = [f.name for f in Data._meta.get_fields()]
@@ -83,6 +124,9 @@ class TrainModels:
         # Gérer les colonnes catégoriques
              self.df[column] = pd.to_numeric(self.df[column], errors='coerce', downcast='float')
 
+        return self.df
+             
+
     def replace_underscore_with_space(self, input_string):
       # Ajoute "_score" à la fin de la chaîne de caractères
        output_string = input_string + '_score'
@@ -98,51 +142,22 @@ class TrainModels:
 
     #Prétraitement des données, remplacement des nan par 0 ou la moyenne
     def preprocessing(self):
-
         df = self.df
-        #print("Top10 column:", df['Top10'])
-        #print(df.shape)
-        #print(df['Top10'])
-       
-        df['Title1_length'             ].replace( np.nan,0, inplace=True)
-        df['Title2_length'             ].replace( np.nan,0, inplace=True)
-        df['Title2_pixel_width'             ].replace( np.nan,0, inplace=True)
-        df['Desktop_total_blocking_time_lab'].replace( np.nan,0, inplace=True)
-        df['Title1'             ].replace( np.nan,0, inplace=True)
-        df['Title2'             ].replace( np.nan,0, inplace=True)
-        df['Meta_description2'             ].replace( np.nan,0, inplace=True)
-        df['Meta_Keywords1'             ].replace( np.nan,0, inplace=True)
-        df['H1_1'             ].replace( np.nan,0, inplace=True)
-        df['H1_2'             ].replace( np.nan,0, inplace=True)
-        df['H2_1'             ].replace( np.nan,0, inplace=True)
-        df['H2_2'             ].replace( np.nan,0, inplace=True)
-        df['Meta_robots_1'             ].replace( np.nan,0, inplace=True)
-        df['Meta_robots_2'             ].replace( np.nan,0, inplace=True)
-        df['Meta_robots_3'             ].replace( np.nan,0, inplace=True)
-        df['Canonical_link_element2'             ].replace( np.nan,0, inplace=True)
-        df['Meta_description1'             ].replace( np.nan,0, inplace=True)
-        df['Meta_description1_length'  ].replace( np.nan,0, inplace=True)
-        df['H1_1_length'                ].replace( np.nan,0, inplace=True)
-        df['H2_1_length'                ].replace( np.nan,0, inplace=True)
-        df['H2_2_length'                ].replace( np.nan,0, inplace=True)
-        df['Size_bytes'               ].replace( np.nan,0, inplace=True)
-        df['Word_count'                 ].replace( np.nan,0, inplace=True)
-        df['Sentence_Count'             ].replace( np.nan,0, inplace=True)
-        df['Inlinks'                    ].replace( np.nan,0, inplace=True)
-        df['Outlinks'                   ].replace( np.nan,0, inplace=True)
-        df['Unique_Outlinks'            ].replace( np.nan,0, inplace=True)
-        df['External_Outlinks'          ].replace( np.nan,0, inplace=True)
-        df['Unique_External_Outlinks'   ].replace( np.nan,0, inplace=True)
-        df['SOSEO_yourtext_guru'   ].replace( np.nan,0, inplace=True)
-        df['DSEO_yourtext_guru'   ].replace( np.nan,0, inplace=True)
-        df['Score_1fr'   ].replace( np.nan,0, inplace=True)
+        
+        # Remplacer les valeurs manquantes dans les colonnes spécifiques par zéro
+        columns_to_replace = ['Title1_length', 'Title2_length', 'Title2_pixel_width', 'Desktop_total_blocking_time_lab', 'Title1', 
+                              'Title2', 'Meta_description2', 'Meta_Keywords1', 'H1_1', 'H1_2', 'H2_1', 'H2_2', 'Meta_robots_1',
+                                'Meta_robots_2', 'Meta_robots_3', 'Canonical_link_element2', 'Meta_description1', 'Meta_description1_length',
+                                  'H1_1_length', 'H2_1_length', 'H2_2_length', 'Size_bytes', 'Word_count', 'Sentence_Count', 'Inlinks', 'Outlinks',
+                                    'Unique_Outlinks', 'External_Outlinks', 'Unique_External_Outlinks', 'SOSEO_yourtext_guru', 'DSEO_yourtext_guru', 'Score_1fr']
+        df[columns_to_replace] = df[columns_to_replace].fillna(0)
 
+        # Sélectionner uniquement les colonnes numériques
         numeric_columns = df.select_dtypes(include=[np.number]).columns
+        
+        # Remplacer les valeurs manquantes dans les colonnes numériques par leur moyenne
         df[numeric_columns] = df[numeric_columns].fillna(df[numeric_columns].mean())
-        #df["SOSEO_yourtext_guru"]= df["SOSEO_yourtext_guru"].fillna(df["SOSEO_yourtext_guru"].mean())
-        df = df.apply(lambda col: col.fillna(col.mean()), axis=0)
 
-   
         self.df = df
         self.y = df['Top10'] 
         self.X = df.drop(['Top10'], axis=1).copy()
@@ -166,6 +181,8 @@ class TrainModels:
         }
         model = XGBClassifier( random_state=42)
         model.fit(X_train, y_train)
+        model.X_train = X_train  # Ajoutez cet attribut
+        model.y_train = y_train  # Ajoutez cet attribut
         print("*****************************************************************Train model 1 : XGBClassifier*****************************************************************")
         return model
     
@@ -230,10 +247,6 @@ class TrainModels:
         plt.figure(figsize=(8, 6))
         sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', cbar=False,
                 xticklabels=['Top10', 'Non Top10'], yticklabels=['Top10', ' Non Top10'])
-        """plt.xlabel('Prédictions')
-        plt.ylabel('Vraies valeurs')
-        plt.title('Matrice de confusion')
-        plt.show()"""
         return auc , acc       
 
 
@@ -305,7 +318,6 @@ class TrainModels:
       self.models = models
       return stack_model,X_test_stack, y_test_stack, model1, model2, model3, model4, model5
     
-
     
     def Final_get_importance(self, user_instance): 
         test_instance = Test()

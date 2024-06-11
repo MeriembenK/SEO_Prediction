@@ -10,7 +10,7 @@ from django.http import HttpRequest
 from django.contrib.auth.models import User
 from django.test import RequestFactory
 
-def run_script_with_keyword(keyword_searched):
+def run_script_with_keyword(keyword_searched, user_instance):
     dc = DataColector()
 
     # Appelez la méthode get_keywords
@@ -24,15 +24,17 @@ def run_script_with_keyword(keyword_searched):
     nb_top_1 = 10
 
     Data.objects.filter(Keyword=keyword_searched).delete()
-    Keyword.objects.filter(Keyword=keyword_searched).delete()
+    Keyword.objects.filter(keyword=keyword_searched).delete()
 
     res_df = dc.get_Data_as_csv2(keyword_searched, nb_sim_keywords, nb_links, nb_top_1)
     print("Données traitées pour le mot-clé", keyword_searched, ":")
     print(res_df)
 
     data_sets_directory = './DataSets'
-
-    import_keywords_from_csv(data_sets_directory, keyword_searched)
+    print(f"user_instance in run_script_with_keyword: {type(user_instance)}")
+    print("on affiche le user_instance", user_instance)
+    
+    import_keywords_from_csv(data_sets_directory, keyword_searched, user_instance)
     import_data_from_csv_files(data_sets_directory, keyword_searched)
 
 

@@ -18,7 +18,7 @@
             border-right: none; /* Retirer la ligne verticale de la dernière colonne */
         }
         .delete {
-            margin-left: 600px;
+            margin-left: 1200px;
         }
         /* Cacher les cases à cocher par défaut */
         .row-checkbox, .header-checkbox {
@@ -34,6 +34,20 @@
         #pie-chart {
             margin-top: 20px;
         }
+        .chart-container {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            margin-top: 30px;
+            padding: 10px;
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
     </style>
     <title>SEO Prediction</title>
 </head>
@@ -93,9 +107,7 @@
                                 });
                             </script>
                         </div>
-                        <div class="delete">
-                            <button id="delete-selected" class="btn btn-danger" style="margin-left: 10px;">Delete</button>
-                        </div>
+                      
                         <!-- Tableau pour afficher les données des tests -->
                         <div class="table-responsive">
                             <table class="table" id="keyword-table">
@@ -143,6 +155,9 @@
                         <div class="pagination-container">
                             <button id="prev" class="btn btn-primary">Previous</button>
                             <button id="next" class="btn btn-primary">Next</button>
+                        </div>
+                        <div class="delete">
+                            <button id="delete-selected" class="btn btn-danger" style="margin-left: 10px;">Delete</button>
                         </div>
                         <script>
                             document.addEventListener("DOMContentLoaded", function() {
@@ -241,15 +256,22 @@
                                 }
                             });
                         </script>
+                           
+                          
+                        <div class="chart-container">
+                            <div class="chart-title">Relative importance of indicators for keywords.</div>
+                            <div id="bar-chart" style="height: 600px;"></div>
+                            <div id="pie-chart"></div>
+                        </div>
+
                         <script>
-                            // Filtrer les lignes du tableau en fonction du mot clé sélectionné
                             document.addEventListener("DOMContentLoaded", function() {
                                 const selectElement = document.getElementById('keyword-filter');
                                 const tableRows = document.querySelectorAll("#keyword-table tbody tr");
-
+                        
                                 selectElement.addEventListener('change', function() {
                                     const selectedKeyword = this.value;
-
+                        
                                     tableRows.forEach(row => {
                                         const keywordCell = row.querySelector("td:nth-child(3)");
                                         if (selectedKeyword === "" || keywordCell.textContent === selectedKeyword) {
@@ -258,128 +280,47 @@
                                             row.style.display = "none";
                                         }
                                     });
-
+                        
                                     if (selectedKeyword !== "") {
                                         updateBarChart(selectedKeyword);
                                     } else {
-                                        // Si aucun mot-clé n'est sélectionné, afficher le graphique avec tous les mots-clés
                                         updateBarChartForAllKeywords();
                                     }
                                 });
-
-                                // Affichage initial
-                                // updateBarChartForAllKeywords(); // Retiré ici pour éviter l'appel multiple
+                        
+                                updateBarChartForAllKeywords();
                             });
-
-                            // Fonction pour mettre à jour le diagramme à barres pour tous les mots-clés
-                        function updateBarChartForAllKeywords() {
-                            const tableRows = document.querySelectorAll("#keyword-table tbody tr");
-                            const data = {};
-                            const colors = []; // Tableau pour stocker les couleurs des barres
-
-                            tableRows.forEach(row => {
-                                const cells = row.querySelectorAll("td[data-attribute]");
-                                cells.forEach(cell => {
-                                    const attribute = cell.getAttribute("data-attribute");
-                                    const value = parseFloat(cell.textContent.trim().split(" ")[0]);
-                                    if (!data[attribute]) {
-                                        data[attribute] = 0;
-                                    }
-                                    data[attribute] += value;
-                                });
-                            });
-
-                            const labels = Object.keys(data);
-                            const values = Object.values(data);
-
-                            // Génération des couleurs pour chaque série de données
-                            for (let i = 0; i < values.length; i++) {
-                                colors.push(getRandomColor());
-                            }
-
-                            var options = {
-                                series: [{
-                                    data: values,
-                                    colors: colors // Spécifier les couleurs pour chaque barre
-                                }],
-                                chart: {
-                                    type: 'bar',
-                                    height: 350
-                                },
-                                plotOptions: {
-                                    bar: {
-                                        horizontal: true
-                                    }
-                                },
-                                dataLabels: {
-                                    enabled: false
-                                },
-                                xaxis: {
-                                    categories: labels,
-                                    labels: {
-                                        formatter: function (value) {
-                                            return parseFloat(value).toFixed(2);
-                                        }
-                                    }
-                                }
-                            };
-
-                            // Vérifier s'il existe déjà un graphique
-                            var chartElement = document.querySelector("#bar-chart");
-                            if (chartElement.chart) {
-                                chartElement.chart.destroy();
-                            }
-
-                            var chart = new ApexCharts(chartElement, options);
-                            chart.render();
-                            chartElement.chart = chart; // Attacher le graphique à l'élément pour une utilisation ultérieure
-                        }
-
-                        // Fonction pour générer une couleur aléatoire
-                        function getRandomColor() {
-                            const letters = '0123456789ABCDEF';
-                            let color = '#';
-                            for (let i = 0; i < 6; i++) {
-                                color += letters[Math.floor(Math.random() * 16)];
-                            }
-                            return color;
-                        }
-
-
-                            // Fonction pour mettre à jour le diagramme à barres pour un mot-clé spécifique
-                            function updateBarChart(keyword) {
+                        
+                            function updateBarChartForAllKeywords() {
                                 const tableRows = document.querySelectorAll("#keyword-table tbody tr");
                                 const data = {};
-
+                        
                                 tableRows.forEach(row => {
-                                    const keywordCell = row.querySelector("td:nth-child(3)");
-                                    if (keywordCell.textContent.trim() === keyword) {
-                                        const cells = row.querySelectorAll("td[data-attribute]");
-                                        cells.forEach(cell => {
-                                            const attribute = cell.getAttribute("data-attribute");
-                                            const value = parseFloat(cell.textContent.trim().split(" ")[0]);
-                                            if (!data[attribute]) {
-                                                data[attribute] = 0;
-                                            }
-                                            data[attribute] += value;
-                                        });
-                                    }
+                                    const cells = row.querySelectorAll("td[data-attribute]");
+                                    cells.forEach(cell => {
+                                        const attribute = cell.getAttribute("data-attribute");
+                                        const value = parseFloat(cell.textContent.trim().split(" ")[0]);
+                                        if (!data[attribute] || value > data[attribute]) {
+                                            data[attribute] = value;
+                                        }
+                                    });
                                 });
-
+                        
                                 const labels = Object.keys(data);
-                                const values = Object.values(data);
-
+                                const values = labels.map(label => data[label] * 100);  // Multiplier par 100
+                        
                                 var options = {
                                     series: [{
                                         data: values
                                     }],
                                     chart: {
                                         type: 'bar',
-                                        height: 350
+                                        height: 850
                                     },
                                     plotOptions: {
                                         bar: {
-                                            horizontal: true
+                                            horizontal: true,
+                                            distributed: true
                                         }
                                     },
                                     dataLabels: {
@@ -389,26 +330,94 @@
                                         categories: labels,
                                         labels: {
                                             formatter: function (value) {
-                                                return parseFloat(value).toFixed(2);
+                                                return parseFloat(value).toFixed(2) + '%';  // Ajouter le symbole de pourcentage
                                             }
                                         }
-                                    }
+                                    },
+                                    colors: generateUniqueColors(values.length)
                                 };
-
-                                // Vérifier s'il existe déjà un graphique
+                        
                                 var chartElement = document.querySelector("#bar-chart");
                                 if (chartElement.chart) {
                                     chartElement.chart.destroy();
                                 }
-
+                        
                                 var chart = new ApexCharts(chartElement, options);
                                 chart.render();
-                                chartElement.chart = chart; // Attacher le graphique à l'élément pour une utilisation ultérieure
+                                chartElement.chart = chart;
+                            }
+                        
+                            function updateBarChart(keyword) {
+                                const tableRows = document.querySelectorAll("#keyword-table tbody tr");
+                                const data = {};
+                        
+                                tableRows.forEach(row => {
+                                    const keywordCell = row.querySelector("td:nth-child(3)");
+                                    if (keywordCell.textContent.trim() === keyword) {
+                                        const cells = row.querySelectorAll("td[data-attribute]");
+                                        cells.forEach(cell => {
+                                            const attribute = cell.getAttribute("data-attribute");
+                                            const value = parseFloat(cell.textContent.trim().split(" ")[0]) * 100;
+                                            if (!data[attribute]) {
+                                                data[attribute] = value;
+                                            } else if (value > data[attribute]) {
+                                                data[attribute] = value;
+                                            }
+                                        });
+                                    }
+                                });
+                        
+                                const labels = Object.keys(data);
+                                const values = labels.map(label => data[label]);
+                        
+                                var options = {
+                                    series: [{
+                                        data: values
+                                    }],
+                                    chart: {
+                                        type: 'bar',
+                                        height: 650
+                                    },
+                                    plotOptions: {
+                                        bar: {
+                                            horizontal: true,
+                                            distributed: true
+                                        }
+                                    },
+                                    dataLabels: {
+                                        enabled: false
+                                    },
+                                    xaxis: {
+                                        categories: labels,
+                                        labels: {
+                                            formatter: function (value) {
+                                                return parseFloat(value).toFixed(2) + '%';  // Ajouter le symbole de pourcentage
+                                            }
+                                        }
+                                    },
+                                    colors: generateUniqueColors(values.length)
+                                };
+                        
+                                var chartElement = document.querySelector("#bar-chart");
+                                if (chartElement.chart) {
+                                    chartElement.chart.destroy();
+                                }
+                        
+                                var chart = new ApexCharts(chartElement, options);
+                                chart.render();
+                                chartElement.chart = chart;
+                            }
+                        
+                            function generateUniqueColors(count) {
+                                const colors = [];
+                                for (let i = 0; i < count; i++) {
+                                    colors.push(`hsl(${(i * 360 / count)}, 100%, 50%)`);
+                                }
+                                return colors;
                             }
                         </script>
-                        <div id="bar-chart"></div>
                       
-                        <div id="pie-chart"></div>
+                    </div>
                         <script>
                             // Fonction pour mettre à jour le diagramme camembert pour tous les mots-clés
                             function updatePieChartForAllKeywords() {
@@ -437,8 +446,8 @@
                                     labels: labels,
                                     chart: {
                                         type: 'pie',
-                                        width: '80%',
-                                        height: 'auto'
+                                        width: '100%', // Ajuster cette valeur pour augmenter la largeur
+                                        height: '500px' // Ajuster cette valeur pour augmenter la hauteur
                                     },
                                     plotOptions: {
                                         pie: {
@@ -450,7 +459,8 @@
                                     },
                                     legend: {
                                         position: 'bottom'
-                                    }
+                                    },
+                                    colors: generateUniqueColors(labels.length) // Assigner une palette de couleurs unique
                                 };
                         
                                 // Vérifier l'existence de l'élément pie-chart
@@ -501,8 +511,8 @@
                                     labels: labels,
                                     chart: {
                                         type: 'pie',
-                                        width: '80%',
-                                        height: 'auto'
+                                        width: '100%', // Ajuster cette valeur pour augmenter la largeur
+                                        height: '500px' // Ajuster cette valeur pour augmenter la hauteur
                                     },
                                     plotOptions: {
                                         pie: {
@@ -514,7 +524,8 @@
                                     },
                                     legend: {
                                         position: 'bottom'
-                                    }
+                                    },
+                                    colors: generateUniqueColors(labels.length) // Assigner une palette de couleurs unique
                                 };
                         
                                 // Vérifier l'existence de l'élément pie-chart
@@ -550,15 +561,251 @@
                                     updatePieChartForAllKeywords();
                                 }
                             });
+                        
+                            // Fonction pour générer des couleurs uniques
+                            function generateUniqueColors(count) {
+                                const colors = [];
+                                for (let i = 0; i < count; i++) {
+                                    colors.push(`hsl(${(i * 360 / count)}, 100%, 50%)`);
+                                }
+                                return colors;
+                            }
                         </script>
                         
-                       
+                        <div class="chart-container">
+                            <div class="chart-title">Models indicators changes over time for keywords.</div>
+                            <div class="mb-3">
+                                <label for="indicator-filter" class="form-label">Filter by indicator</label>
+                                <select class="form-select" id="indicator-filter" style="width: 250px;">
+                                    <option value="precision">Precision</option>
+                                    {% for attribute in attribute_names %}
+                                        {% if attribute != 'id' and attribute != 'nb url' and attribute != 'precision' %}
+                                            <option value="{{ attribute }}">{{ attribute }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div id="line-chart" style="height: 450px;"></div>
+                        </div>
+
+
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const keywordData = {};
+                                const tableRows = document.querySelectorAll("#keyword-table tbody tr");
+                        
+                                // Collect indicators for each keyword
+                                tableRows.forEach(row => {
+                                    const keyword = row.querySelector("td:nth-child(3)").textContent.trim();
+                                    const cells = row.querySelectorAll("td[data-attribute]");
+                        
+                                    if (!keywordData[keyword]) {
+                                        keywordData[keyword] = {};
+                                    }
+                        
+                                    cells.forEach(cell => {
+                                        const attribute = cell.getAttribute('data-attribute');
+                                        const value = cell.textContent.trim();
+                                        
+                                        if (value) {
+                                            keywordData[keyword][attribute] = true;
+                                        }
+                                    });
+                                });
+                        
+                                // Store the data globally to use later
+                                window.keywordData = keywordData;
+                        
+                                const keywordSelectElement = document.getElementById('keyword-filter');
+                                const indicatorSelectElement = document.getElementById('indicator-filter');
+                        
+                                keywordSelectElement.addEventListener('change', function() {
+                                    const selectedKeyword = this.value;
+                                    updateIndicatorOptions(selectedKeyword);
+                                    updateLineChart();
+                                });
+                        
+                                indicatorSelectElement.addEventListener('change', function() {
+                                    updateLineChart();
+                                });
+                        
+                                // Initial display with all keywords and default indicator (precision)
+                                updateLineChartForAllKeywords();
+                            });
+                        
+                            function updateIndicatorOptions(selectedKeyword) {
+                                const indicatorSelectElement = document.getElementById('indicator-filter');
+                        
+                                // Clear previous indicator options
+                                indicatorSelectElement.innerHTML = '';
+                        
+                                // Default option
+                                const precisionOption = document.createElement('option');
+                                precisionOption.value = 'precision';
+                                precisionOption.textContent = 'Precision';
+                                indicatorSelectElement.appendChild(precisionOption);
+                        
+                                if (selectedKeyword) {
+                                    // Get indicators for the selected keyword
+                                    const indicators = window.keywordData[selectedKeyword] || {};
+                        
+                                    // Populate the indicator select element
+                                    for (const indicator in indicators) {
+                                        const option = document.createElement('option');
+                                        option.value = indicator;
+                                        option.textContent = indicator;
+                                        indicatorSelectElement.appendChild(option);
+                                    }
+                                }
+                            }
+                        
+                            function updateLineChartForAllKeywords() {
+                                const tableRows = document.querySelectorAll("#keyword-table tbody tr");
+                                const data = {};
+                                const allData = [];
+                                const selectedIndicator = document.getElementById('indicator-filter').value || 'precision';
+                        
+                                tableRows.forEach(row => {
+                                    const date = row.querySelector("td:nth-child(2)").textContent.trim();
+                                    const keyword = row.querySelector("td:nth-child(3)").textContent.trim();
+                                    let value;
+                        
+                                    if (selectedIndicator === 'precision') {
+                                        value = parseFloat(row.querySelector("td:nth-child(5)").textContent.trim()) * 100;
+                                    } else {
+                                        const indicatorCell = row.querySelector(`td[data-attribute="${selectedIndicator}"]`);
+                                        if (indicatorCell) {
+                                            value = parseFloat(indicatorCell.textContent.trim().split(' ')[0]) * 100;
+                                        }
+                                    }
+                        
+                                    if (!data[keyword]) {
+                                        data[keyword] = [];
+                                    }
+                        
+                                    if (value !== undefined) {
+                                        data[keyword].push({ x: new Date(date), y: value, keyword: keyword });
+                                    }
+                                });
+                        
+                                Object.keys(data).forEach(keyword => {
+                                    allData.push({
+                                        name: keyword,
+                                        data: data[keyword]
+                                    });
+                                });
+                        
+                                renderLineChart(allData, selectedIndicator);
+                            }
+                        
+                            function updateLineChart() {
+                                const selectedKeyword = document.getElementById('keyword-filter').value;
+                                const selectedIndicator = document.getElementById('indicator-filter').value;
+                        
+                                if (selectedKeyword) {
+                                    updateLineChartForKeyword(selectedKeyword, selectedIndicator);
+                                } else {
+                                    updateLineChartForAllKeywords();
+                                }
+                            }
+                        
+                            function updateLineChartForKeyword(keyword, indicator) {
+                                const tableRows = document.querySelectorAll("#keyword-table tbody tr");
+                                const data = [];
+                        
+                                tableRows.forEach(row => {
+                                    const date = row.querySelector("td:nth-child(2)").textContent.trim();
+                                    const rowKeyword = row.querySelector("td:nth-child(3)").textContent.trim();
+                                    let value;
+                        
+                                    if (indicator === 'precision') {
+                                        value = parseFloat(row.querySelector("td:nth-child(5)").textContent.trim()) * 100;
+                                    } else {
+                                        const indicatorCell = row.querySelector(`td[data-attribute="${indicator}"]`);
+                                        if (indicatorCell) {
+                                            value = parseFloat(indicatorCell.textContent.trim().split(' ')[0]) * 100;
+                                        }
+                                    }
+                        
+                                    if (rowKeyword === keyword && value !== undefined) {
+                                        data.push({ x: new Date(date), y: value, keyword: keyword });
+                                    }
+                                });
+                        
+                                renderLineChart([{ name: keyword, data: data }], indicator);
+                            }
+                        
+                            function renderLineChart(seriesData, indicator) {
+                                const options = {
+                                    series: seriesData,
+                                    chart: {
+                                        type: 'line',
+                                        height: 450,
+                                        zoom: {
+                                            enabled: true
+                                        }
+                                    },
+                                    stroke: {
+                                        curve: 'smooth'
+                                    },
+                                    markers: {
+                                        size: 4,
+                                        hover: {
+                                            size: 7
+                                        }
+                                    },
+                                    xaxis: {
+                                        type: 'datetime',
+                                        title: {
+                                            text: 'Date'
+                                        }
+                                    },
+                                    yaxis: {
+                                        title: {
+                                            text: indicator.charAt(0).toUpperCase() + indicator.slice(1)
+                                        },
+                                        labels: {
+                                            formatter: function(value) {
+                                                return value.toFixed(2) + '%';
+                                            }
+                                        }
+                                    },
+                                    tooltip: {
+                                        shared: true,
+                                        intersect: false,
+                                        x: {
+                                            format: 'dd MMM yyyy'
+                                        },
+                                        y: {
+                                            formatter: function(value, { series, seriesIndex, dataPointIndex, w }) {
+                                                const point = w.globals.seriesX[seriesIndex][dataPointIndex];
+                                                const keyword = seriesData[seriesIndex].data[dataPointIndex].keyword;
+                                                return `${indicator.charAt(0).toUpperCase() + indicator.slice(1)}: ${value.toFixed(2)}%<br>Keyword: ${keyword}`;
+                                            }
+                                        }
+                                    }
+                                };
+                        
+                                const chartElement = document.querySelector("#line-chart");
+                                if (chartElement.chart) {
+                                    chartElement.chart.destroy();
+                                }
+                        
+                                const chart = new ApexCharts(chartElement, options);
+                                chart.render();
+                                chartElement.chart = chart;
+                            }
+                        </script>
+                    
 
                     </div>
                 </div>
             </div>
             
         </div>
+              
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{% static 'path/to/bootstrap.bundle.min.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script> 
      <!-- Include Bootstrap JS -->

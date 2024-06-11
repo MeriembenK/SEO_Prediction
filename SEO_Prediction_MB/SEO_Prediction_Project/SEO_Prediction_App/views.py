@@ -9,8 +9,9 @@ from django.http.response import HttpResponseRedirect
 from django.http import HttpResponse
 from django.contrib.auth.models import User
 from . import test
-from .models import Data, Test, MinMaxValue
+from .models import Data, Test, MinMaxValue, Keyword
 from Predictive.train_Models import TrainModels
+from Predictive.url_Predict import UrlPredect
 from Predictive.response_Builder import ResponseBuilder
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -23,7 +24,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
-from django.utils.dateparse import parse_datetime
+from import_data_url import import_data_url_from_csv_files
 
 
 
@@ -53,20 +54,114 @@ def centre(request):
     }
     return render(request, "general/dashboard/default/centre.html", context)
 
+
 @login_required(login_url="/login_home")
 def url(request):
     message = "Ceci est un message à afficher dans le modèle centre.html"
     text = "Ceci est un message à afficher dans le modèle url.html"
-    user_name = request.user.username if request.user.is_authenticated else None
-   
+    user_instance = request.user
+
+    selected_keyword = ""
+    entered_url = ""
+    pred_res = None
+
+    if not isinstance(user_instance, User):
+        return HttpResponse("Utilisateur non valide", status=400)
+    df_min_max_top_15 = None
+    df_min_max_top_15_list = None
+    if request.method == "POST":
+        selected_keyword = request.POST.get('keyword')
+        entered_url = request.POST.get('url')
+        print(f'Selected Keyword: {selected_keyword}')
+        print(f'Entered URL: {entered_url}')
+        # Traitez les données ici et ajoutez la logique appropriée
+
+        response_builder = ResponseBuilder()
+        trainer = TrainModels()
+        up = UrlPredect()
+
+        specific_url = entered_url
+        keyword = selected_keyword
+
+        # Lecture de la data depuis la bdd
+        trainer.keyword = keyword
+        df = trainer.read_my_data()
+        trainer.df = df
+        print("**************Trainer_df**************",trainer.df)
+
+        trainer.df = trainer.df.drop(columns=["Keyword"])
+        trainer.df = trainer.df.drop(columns=["Url"])
+        trainer.df = trainer.data_to_drop(trainer.df)
+        trainer.preprocessing()
+        print(trainer.df)
+
+        response_builder.df = trainer.df
+        print(response_builder.df)
+
+        X_train, X_test, y_train, y_test = trainer.split_data(trainer.X, trainer.y)
+
+        trained_model = trainer.train_XGBClassifier(X_train, y_train)
+        auc, acc = trainer.eval_model(trained_model, X_test, y_test)
+        print(auc, acc)
+        df_importance = trainer.get_importance(trained_model)
+        df_importance_top_15 = df_importance.head(15)
+        print("Les 15 fonctionnalités les plus importantes :")
+        print(df_importance_top_15)
+
+        trained_model.y = y_train
+        response_builder.trainedModels = trained_model
+
+        data_test, testing = up.get_data_for_1_urls(specific_url, keyword, df, response_builder)
+
+        print("data test & testing", data_test, testing)
+
+        if testing == False:
+            csv_filename = './Url_data/url_data_output.csv'
+            up.url_data.to_csv(csv_filename, index=False)
+            print(f"Data saved to {csv_filename}")
+
+            data_sets = "./Url_data"
+            import_data_url_from_csv_files(data_sets)
+
+        thedf_test = up.get_data_url_from_database()
+        print(thedf_test)
+
+        up.url_data = thedf_test
+        up.url_data = up.exclude_and_convert_columns(up.url_data)
+
+        result, pred_res = up.try_for_columns(trained_model, response_builder)
+        print(pred_res)
+
+        df_min_max = response_builder.get_min_max_url()
+        print(df_min_max)
+        # Filtrer les résultats pour ne conserver que les 15 premières fonctionnalités importantes
+        top_15_columns = df_importance_top_15['variable'].tolist()
+        df_min_max_top_15 = df_min_max[top_15_columns]
+
+        print("Les résultats min-max pour les 15 premières fonctionnalités importantes :")
+        print(df_min_max_top_15)
+
+        # Convertir en liste de dictionnaires
+        df_min_max_top_15_list = df_min_max_top_15.reset_index().melt(id_vars=['index']).to_dict(orient='records')
+        print(df_min_max_top_15_list)
+
+    print("the user name", user_instance)
+
+    # Récupère uniquement les mots-clés associés à l'utilisateur actuellement authentifié
+    keywords = Keyword.objects.filter(user=user_instance)
+
     context = {
         'message': message,
         'text': text,
-        'user_name': user_name
+        'user_name': user_instance.username if user_instance.is_authenticated else None,
+        'keywords': keywords,
+        'selected_keyword': selected_keyword,
+        'entered_url': entered_url,
+        'pred_res': pred_res,
+        'df_min_max_top_15': df_min_max_top_15_list
     }
+
     return render(request, 'general/dashboard/default/url.html', context)
-
-
 
 User = get_user_model()
 def handle_keyword(request):
@@ -86,8 +181,7 @@ def handle_keyword(request):
         # Assurez-vous que user_instance est bien une instance de User
         if not isinstance(user_instance, User):
             return HttpResponse("Utilisateur non valide", status=400)
-
-
+    
 
         # Stocker les valeurs dans la session Django
         request.session['keyword'] = keyword_searched
@@ -110,8 +204,9 @@ def handle_keyword(request):
         serveur_smtp.login(expediteur, mot_de_passe)
         serveur_smtp.send_message(message)
         serveur_smtp.quit()
-
-        test.run_script_with_keyword(keyword_searched)
+        
+       
+        test.run_script_with_keyword(keyword_searched,user_instance)
         
         # Initialisation de la classe TrainModels
         trainer = TrainModels()

@@ -3,8 +3,9 @@
 from .SemantiqueValues import SemantiqueValues
 from .data_colector import DataColector 
 from SEO_Prediction_App.models import Data, Data_Url
+from itertools import combinations
 import pandas as pd
-
+import numpy as np
 
 class UrlPredect:
 
@@ -16,53 +17,35 @@ class UrlPredect:
         self.url_data2  = None
 
 
-
-    #Récupération de la data depuis la BDD
-    def get_data_from_database(self):
-        
-        data_queryset = Data.objects.values()
-        df = pd.DataFrame.from_records(data_queryset)
-        df = df.convert_dtypes()
-        return df
-    
-    def get_data_url_from_database(self):
-        
-        data_queryset = Data_Url.objects.values()
-        df = pd.DataFrame.from_records(data_queryset)
-        df = df.convert_dtypes()
-        return df
-    
-    #Exclusion et conversion de certaines colonnes
+     #Exclusion et conversion de certaines colonnes
     @staticmethod
     def exclude_and_convert_columns(data_frame):
-        # Colonnes à exclure
-        colonnes_exclues = ['id','Position', 'Keyword','Url_Score', 'HTTP_Version', 'Http_code_babbar', 'Content_type',
-                            'Status_code', 'Status', 'Indexability_x', 'Indexability_status_x', 'X_robots_tag1',
-                            'Meta_Robots_1_score', 'Meta_Refresh_1', 'Canonical_link_element1', 'rel_next_1', 'rel_prev_1',
-                            'HTTP_rel_next_1', 'HTTP_rel_prev_1', 'amphtml_link_element', 'Readability', 'Link_score',
-                            'Closest_Similarity_Match', 'NoNear_Duplicates', 'Spelling_Errors', 'Grammar_Errors', 'Hash',
-                            'Last_modified', 'Redirect_URL', 'Redirect_type', 'Cookies', 'URL_Encoded_Address', 'Crawl_Timestamp',
-                            'Type_1', 'Indexability_y', 'Indexability_Status_y', 'Date_added']
+        
+        colonnes_exclues = ['id','Position','Url_Score', 'HTTP_Version','Http_code_babbar','Thekeyword','Content_type','Content_Type','Status_code','Status','Indexability_x','Indexability_status_x'
+                            ,'X_robots_tag1','Meta_Robots_1_score','Meta_Refresh_1','Canonical_link_element1','rel_next_1','rel_prev_1','HTTP_rel_next_1','HTTP_rel_prev_1','amphtml_link_element',
+                              'Readability','Link_score','Closest_Similarity_Match','NoNear_Duplicates','Spelling_Errors','Grammar_Errors','Hash','Last_modified','Redirect_URL',
+                              'Redirect_type','Cookies','URL_Encoded_Address','Crawl_Timestamp','Type_1','Indexability_y','Indexability_Status_y', 'Date_added', 'Crawl_timestamp']
 
         # Supprimer les colonnes
         data_frame = data_frame.drop(columns=colonnes_exclues, errors='ignore')
 
-        # Colonnes à convertir de string à float
-        colonnes_a_convertir = [ 'Ttfb_babbar', 'Page_value_babbar', 'Page_trust_babbar', 'Semantic_value_babbar', 'Backlinks_babbar', 'Backlinks_host_babbar'
-                         , 'Host_outlinks_babbar', 'Outlinks_babbar', 'Desktop_first_contentful_paint_terrain', 'Desktop_cumulative_layout_shift_terrain', 'Desktop_first_contentful_paint_lab',
-                         'Desktop_largest_contentful_paint_lab', 'SOSEO_yourtext_guru', 'DSEO_yourtext_guru', 'Word_count', 'Sentence_Count', 'Flesch_reading_ease_score', 'H1_2_length',
+        float_columns = ['Ttfb_babbar', 'Page_value_babbar', 'Page_trust_babbar', 'Semantic_value_babbar', 'Backlinks_babbar', 'Backlinks_host_babbar'
+                         ,'Host_outlinks_babbar', 'Outlinks_babbar', 'Desktop_first_contentful_paint_terrain', 'Desktop_cumulative_layout_shift_terrain', 'Desktop_first_contentful_paint_lab',
+                         'Desktop_largest_contentful_paint_lab','Desktop_speed_index_lab', 'SOSEO_yourtext_guru', 'DSEO_yourtext_guru', 'Word_count', 'Sentence_Count', 'Flesch_reading_ease_score', 'H1_2_length',
                          'Crawl_depth', 'Inlinks', 'Unique_inlinks', 'H2_2_score', 'H2_1_score', 'H1_1_score', 'Meta_Keywords1_score', 'Meta_Description1_score', 'Total_Types',
                          'Warnings', 'Unique_External_JS_Outlinks', 'Unique_External_Outlinks', 'External_Outlinks', 'Unique_Outlinks', 'of_Total', 'Desktop_cumulative_layout_shift_lab',
-                         'Desktop_largest_contentful_paint_terrain', 'Desktop_first_input_delay_terain', 'Outlinks', 'Title1_pixel_width', 'Title2', 'Title2_length', 'H1_1_length', 'H2_2_length',
+                         'Desktop_largest_contentful_paint_terrain', 'Desktop_first_input_delay_terain', 'Desktop_time_to_interactive_lab', 'Outlinks', 'Title1_pixel_width', 'Title2', 'Title2_length', 'H1_1_length', 'H2_2_length',
                          'Title2_pixel_width', 'Meta_description1', 'Meta_description1_Pixel_width', 'Meta_description2', 'Meta_description2_length', 'Meta_keywords1_length', 'H2_1_length',
-                           'Meta_description2_Pixel_width', 'Meta_Keywords1', 'H1_1','H1_2', 'H2_1', 'H2_2', 'Average_words_per_sentence', 'Unique_JS_inlinks', 'Unique_JS_Outlinks', 'Errors', 
-                           'Unique_Types', 'Meta_robots_1', 'Meta_robots_2', 'Meta_robots_3', 'Canonical_link_element2', 'Text_ratio', 'Response_time']
+                           'Meta_description2_Pixel_width', 'Meta_Keywords1', 'Meta_keywords_1','Meta_Keywords_1', 'H1_1','H1_2', 'H2_1', 'H2_2', 'Average_words_per_sentence', 'Response_time', 'Unique_JS_inlinks', 'Unique_JS_Outlinks', 'Errors', 
+                           'Unique_Types', 'Meta_robots_1', 'Meta_robots_2', 'Meta_robots_3', 'Canonical_link_element2', 'Text_ratio', 'Meta_Description_1', 'Meta_description_1', 'URL_encoded_address', 'Title_1', 'Meta_Robots_1', 'Canonical_Link_Element_1', 'Canonical_link_element_1']
+        
+        existing_float_columns = [col for col in float_columns if col in data_frame.columns]
 
-        # Convertir le type des colonnes de string à float
-        data_frame[colonnes_a_convertir] = data_frame[colonnes_a_convertir].apply(pd.to_numeric, errors='coerce')
-        data_frame[colonnes_a_convertir].fillna(0, inplace=True)
+        # Appliquer la conversion uniquement sur les colonnes existantes
+        data_frame[existing_float_columns] = data_frame[existing_float_columns].apply(pd.to_numeric, errors='coerce')
+        data_frame[existing_float_columns].fillna(0, inplace=True)
 
-
+        # Colonnes à convertir de string à float
         columns_to_convert = ['H1_2_score','H2_2_score','H2_2', 'Size_bytes','Word_count','Sentence_Count','Inlinks','Mobile_first_contentful_paint_terrain', 'Mobile_first_input_delay_terain',
                               'Mobile_largest_contentful_paint_terrain', 'H2_1_score', 'H1_1_score', 'Meta_Keywords1_score', 'Meta_Description1_score', 'Title1_score', 'Unique_Types',
                                'Total_Types', 'Errors', 'Unique_External_JS_Outlinks', 'Unique_External_Outlinks', 'External_Outlinks', 'Unique_JS_Outlinks', 'Warnings', 'of_Total', 'Unique_JS_inlinks',
@@ -73,23 +56,26 @@ class UrlPredect:
                                'Desktop_total_blocking_time_lab','Outlinks','Mobile_cumulative_layout_shift_terrain', 'Mobile_first_contentful_paint_lab', 'Mobile_cumulative_layout_shift_lab',
                                'Mobile_speed_index_lab', 'Mobile_largest_contentful_paint_lab','Unique_Outlinks', 'Mobile_time_to_interactive_lab', 'Mobile_total_blocking_time_lab', 'Score_1fr',
                                'Meta_description1_length', 'Text_ratio' ]
-        
-        for column in columns_to_convert:
 
-            #print("Converting column:", column)
-            data_frame[column] = pd.to_numeric(data_frame[column], errors='coerce', downcast='float')
-            #print(data_frame.dtypes)
-            if pd.api.types.is_categorical_dtype(data_frame[column]):
-        # Gérer les colonnes catégoriques
-             data_frame[column] = pd.to_numeric(data_frame[column], errors='coerce', downcast='float')
+        # Convertir le type des colonnes de string à float
+        for colonne in columns_to_convert:
+            if colonne in data_frame.columns:
+                data_frame[colonne] = pd.to_numeric(data_frame[colonne], errors='coerce')
+                data_frame[colonne].fillna(0, inplace=True)
 
         return data_frame
 
-
-
+    def get_data_url_from_database(self):
+        
+        data_queryset = Data_Url.objects.values()
+        df = pd.DataFrame.from_records(data_queryset)
+        df = df.convert_dtypes()
+        return df
+    
     #Récupération de la data pour un url
-    """def get_data_for_1_urls(self,url,keyword,df,responseBuilder):
-        self.url_data   = self.get_data_for_url(url,keyword,df,responseBuilder)
+    def get_data_for_1_urls(self,url,keyword,df,responseBuilder):
+
+        self.url_data, testing   = self.get_data_for_url(url,keyword,df,responseBuilder)
         if isinstance(self.url_data, tuple) and len(self.url_data) > 0:
             # Extraire le premier élément, qui est un DataFrame
             extracted_df = self.url_data[0]
@@ -99,12 +85,9 @@ class UrlPredect:
                 self.url_data = extracted_df
             else:
                 raise TypeError("Le premier élément du tuple n'est pas un DataFrame.")
+        return self.url_data, testing    
             
-            print("I print url_data in get_url_for_1_urls",self.url_data)"""
     
-    def get_data_for_1_urls(self,url,keyword,df,responseBuilder):
-        self.url_data   = self.get_data_for_url(url,keyword,df,responseBuilder)
-
 
 
 
@@ -119,7 +102,7 @@ class UrlPredect:
     #Récupération de la data pour un url
     def get_data_for_url(self,url,keyword,df,responseBuilder):
 
-        df_key = df[df['Thekeyword'] == keyword]
+        df_key = df[df['Keyword'] == keyword]
         df_key_url = df_key[df_key['Url'] == url]
     
         if df_key_url.shape[0] > 0:
@@ -130,46 +113,7 @@ class UrlPredect:
             return self.get_url_data(url,keyword,responseBuilder), testing
         
 
-        #Récupération de la data pour un url
-    def get_data_for_url_keyword(self,url,keyword,df,responseBuilder):
-        nb_sim_keywords = 3
-        nb_links = 30
-        nb_top_1 = 10
-        dc = DataColector()
-        df_key = df[df['Thekeyword'] == keyword]
-        df_key_url = df_key[df_key['Url'] == url]
-    
-        if df_key_url.shape[0] > 0:
-            testing= True
-            return df_key_url.head(1), testing
-        else:
-            testing= False
-            return dc.get_Data_as_csv2(keyword, nb_sim_keywords, nb_links, nb_top_1), testing    
-
-
-    """def get_all_site_data(self, start_url, keyword, df, responseBuilder):
-        # Obtenez tous les URLs du site associés au mot-clé
-        dc = DataColector()
-        site_urls = dc.get_all_site_urls(start_url)
-        
-        # Initialisez une liste pour stocker les DataFrames individuels
-        site_data_list = []
-
-        # Récupérez les données pour chaque URL du site
-        for site_url in site_urls:
-            url_data, testing = self.get_data_for_url(site_url, keyword, df, responseBuilder)
-            if isinstance(url_data, pd.DataFrame):
-                site_data_list.append(url_data)
-            else:
-                print("Attention : La fonction get_data_for_url n'a pas renvoyé un DataFrame.")
-
-        # Concaténez les DataFrames de la liste en un seul DataFrame
-        if site_data_list:
-            site_data = pd.concat(site_data_list, ignore_index=True)
-            return site_data
-        else:
-            print("Attention : Aucune donnée n'a été collectée.")
-            return pd.DataFrame()"""
+       
     
        
     #Collecter la data d'une URL
@@ -195,6 +139,7 @@ class UrlPredect:
         print("Contenu du tuple:", self.url_data)
         print("Type de self.url_data:", type(self.url_data))
         print("Contenu de self.url_data:", self.url_data)
+        
 
         if isinstance(self.url_data, tuple):
             # Assurez-vous qu'il contient un DataFrame ou des données qui peuvent être converties
@@ -203,7 +148,7 @@ class UrlPredect:
                 self.url_data = self.url_data[0]
             else:
                 raise TypeError("Le tuple ne contient pas de DataFrame.")
-
+        
         test = self.url_data.copy()
         my_url_data=test[['Ttfb_babbar', 'Page_value_babbar', 'Page_trust_babbar',
                 'Semantic_value_babbar', 'Backlinks_babbar', 'Backlinks_host_babbar',
@@ -232,6 +177,7 @@ class UrlPredect:
                 'Inlinks', 'Outlinks', 'Unique_Outlinks', 'External_Outlinks',
                 'Unique_External_Outlinks', 'Title1_score', 'Meta_Description1_score',
                 'H1_1_score', 'H2_1_score', 'H2_2_score']]
+        my_url_data = my_url_data.loc[:,~my_url_data.columns.duplicated()] 
         return my_url_data
     
 
@@ -297,202 +243,107 @@ class UrlPredect:
         return res
     
 
-
-    #Remplacements et les prédictions colonne par colonne
-    def try_for_1_column(self,model,df,y):
+    def try_for_n_columns(self, model, df, y, n):
         res = ''
         TEST = False
-        columns = list(self.fun_fun().columns)
-        for col in columns:
-            my_url_data = self.fun_fun()
-            actual1 = my_url_data.iloc[0][col]
-             
-            my_url_data[col] = self.get_to_replace(df,y,col,actual1)
+        my_url_data = self.fun_fun().copy()
+        columns = list(my_url_data.columns)
+        column_combinations = combinations(columns, n)
+        
+        for col_comb in column_combinations:
+            actual_values = [my_url_data.iloc[0][col] for col in col_comb]
+            
+            for col, actual in zip(col_comb, actual_values):
+                my_url_data[col] = self.get_to_replace(df, y, col, actual)
 
+            # Réorganiser les colonnes de self.url_data pour correspondre exactement à celles du modèle
+            model_columns = model.get_booster().feature_names
+            my_url_data = my_url_data.reindex(columns=model_columns).astype(np.float32)
+
+            # Ajouter les colonnes manquantes à self.url_data avec des valeurs par défaut (zéro)
+            for col in model_columns:
+                if col not in my_url_data.columns:
+                    my_url_data[col] = 0.0
+                
             pred_res = model.predict_proba(my_url_data)[0][0]
-            if pred_res > 0.5 :
-                    res = res + 'for a proba of proba ' +str(pred_res) + ' %' + '\n'
-                    res = res + col +'\t      '+str(float(actual1))+' -----> '+ str(float(my_url_data[col])) + '\n'
-                    res = res + 'OR...' + '\n'
-                    TEST = True
-        return TEST , res 
-    
-
-    
-    #Remplacements et les prédictions par combinaison de colonnes 2 à 2
-    def try_for_2_column(self,model,df,y):
-        res = ''
-        TEST = False
-        columns = list(self.fun_fun().columns)
-        for col1 in columns:
-            columns2 = columns ; columns2.remove(col1)
-            for col2 in columns2 :
-                my_url_data = self.fun_fun()
-                actual1 = my_url_data.iloc[0][col1]
-                actual2 = my_url_data.iloc[0][col2]
-                 
-                my_url_data[col1] = self.get_to_replace(df,y,col1,actual1)
-                my_url_data[col2] = self.get_to_replace(df,y,col2,actual2)
-  
-                pred_res = model.predict_proba(my_url_data)[0][0]
-                if  pred_res > 0.5 :
-                    res = res + 'for a proba of proba ' +str(pred_res) + ' %' + '\n'
-                    res = res + col1 +'\t      '+str(float(actual1))+' -----> '+ str(float(my_url_data[col1])) + '\n'
-                    res = res + col2 +'\t      '+str(float(actual2))+' -----> '+ str(float(my_url_data[col2])) + '\n'
-                    res = res + 'OR...' + '\n'
-                    TEST = True
+            if pred_res > 0.5:
+                res += f'for a proba of proba {pred_res} %\n'
+                for col, actual in zip(col_comb, actual_values):
+                    res += f'{col}\t      {float(actual)} -----> {float(my_url_data[col])}\n'
+                res += 'OR...\n'
+                TEST = True
+        
         return TEST, res
-    
-
-
-    #Remplacements et les prédictions par combinaison de colonnes 3 à 3
-    def try_for_3_column(self,model,df,y):   
-        res = ''
-        TEST = False
-        columns = list(self.fun_fun().columns)     
-        for col1 in columns:
-            columns2 = columns; columns2.remove(col1)
-            for col2 in columns2 :
-                columns3 = columns2 ;columns3.remove(col2)
-                for col3 in columns3 :
-                    my_url_data = self.fun_fun()
-                    actual1,actual2,actual3 = my_url_data.iloc[0][col1],my_url_data.iloc[0][col2], my_url_data.iloc[0][col3]
-
-                    my_url_data[col1] = self.get_to_replace(df,y,col1,actual1)
-                    my_url_data[col2] = self.get_to_replace(df,y,col2,actual2)
-                    my_url_data[col3] = self.get_to_replace(df,y,col3,actual3)
- 
-                    pred_res = model.predict_proba(my_url_data)[0][0] 
-                    if pred_res > 0.5 :
-                        res = res + 'for a proba of proba ' +str(pred_res) + ' %' + '\n'
-                        res = res + col1 +'\t      '+str(float(actual1))+' -----> '+ str(float(my_url_data[col1])) + '\n'
-                        res = res + col2 +'\t      '+str(float(actual2))+' -----> '+ str(float(my_url_data[col2])) + '\n'
-                        res = res + col3 +'\t      '+str(float(actual3))+' -----> '+ str(float(my_url_data[col3])) + '\n'
-                        res = res + 'OR...' + '\n'
-                        TEST = True
-        return TEST , res
-    
 
     
-    #Remplacements et les prédictions par combinaison de colonnes 4 à 4
-    def try_for_4_column(self,model,df,y):   
-        res = ''
-        TEST = False
-        columns = list(self.fun_fun().columns)     
-        for col1 in columns:
-            columns2 = columns; columns2.remove(col1)
-            for col2 in columns2 :
-                columns3 = columns2 ;columns3.remove(col2)
-                for col3 in columns3 :
-                    columns4 = columns3 ;columns4.remove(col3)
-                    for col4 in columns4 :
-                        my_url_data = self.fun_fun()
-                        actual1,actual2,actual3,actual4 = my_url_data.iloc[0][col1],my_url_data.iloc[0][col2], my_url_data.iloc[0][col3], my_url_data.iloc[0][col4]
 
-                        my_url_data[col1] = self.get_to_replace(df,y,col1,actual1)
-                        my_url_data[col2] = self.get_to_replace(df,y,col2,actual2)
-                        my_url_data[col3] = self.get_to_replace(df,y,col3,actual3)
-                        my_url_data[col4] = self.get_to_replace(df,y,col4,actual4)
-
-                        pred_res = model.predict_proba(my_url_data)[0][0] 
-                        if pred_res > 0.5 :
-                            res = res + 'for a proba of proba ' +str(pred_res) + ' %' + '\n'
-                            res = res + col1 +'\t      '+str(float(actual1))+' -----> '+ str(float(my_url_data[col1])) + '\n'
-                            res = res + col2 +'\t      '+str(float(actual2))+' -----> '+ str(float(my_url_data[col2])) + '\n'
-                            res = res + col3 +'\t      '+str(float(actual3))+' -----> '+ str(float(my_url_data[col3])) + '\n'
-                            res = res + col4 +'\t      '+str(float(actual4))+' -----> '+ str(float(my_url_data[col4])) + '\n'
-                            res = res + 'OR...' + '\n'
-                            TEST = True
-        return TEST , res
-    
-
-
-    #Remplacements et les prédictions par combinaison de colonnes 5 à 5
-    def try_for_5_column(self,model,df,y):   
-        res = ''
-        TEST = False
-        columns = list(self.fun_fun().columns)     
-        for col1 in columns:
-            columns2 = columns; columns2.remove(col1)
-            for col2 in columns2 :
-                columns3 = columns2 ;columns3.remove(col2)
-                for col3 in columns3 :
-                    columns4 = columns3 ;columns4.remove(col3)
-                    for col4 in columns4 :
-                        columns5 = columns4 ;columns5.remove(col4)
-                        for col5 in columns5 :
-                            my_url_data = self.fun_fun()
-                            actual1,actual2,actual3,actual4,actual5 = my_url_data.iloc[0][col1],my_url_data.iloc[0][col2], my_url_data.iloc[0][col3], my_url_data.iloc[0][col4], my_url_data.iloc[0][col5]
-
-                            my_url_data[col1] = self.get_to_replace(df,y,col1,actual1)
-                            my_url_data[col2] = self.get_to_replace(df,y,col2,actual2)
-                            my_url_data[col3] = self.get_to_replace(df,y,col3,actual3)
-                            my_url_data[col4] = self.get_to_replace(df,y,col4,actual4)
-                            my_url_data[col5] = self.get_to_replace(df,y,col5,actual5)
-
-                            pred_res = model.predict_proba(my_url_data)[0][0] 
-                            if pred_res > 0.5 :
-                                res = res + 'for a proba of proba ' +str(pred_res) + ' %' + '\n'
-                                res = res + col1 +'\t      '+str(float(actual1))+' -----> '+ str(float(my_url_data[col1])) + '\n'
-                                res = res + col2 +'\t      '+str(float(actual2))+' -----> '+ str(float(my_url_data[col2])) + '\n'
-                                res = res + col3 +'\t      '+str(float(actual3))+' -----> '+ str(float(my_url_data[col3])) + '\n'
-                                res = res + col4 +'\t      '+str(float(actual4))+' -----> '+ str(float(my_url_data[col4])) + '\n'
-                                res = res + col5 +'\t      '+str(float(actual5))+' -----> '+ str(float(my_url_data[col5])) + '\n'
-                                res = res + 'OR...' + '\n'
-                                TEST = True
-        return TEST , res
-    
-
-    
-    #Faire des prédictions en en essayant différente combinaisons de colonnes
-    def try_for_columns(self,model,responseBuilder):
+    def try_for_columns(self, model, responseBuilder):
+        print("*******************************************************Debut***************************************************************")
         find = False
         df = responseBuilder.df
-        y  = responseBuilder.trainedModels.y
-    
+        y = responseBuilder.trainedModels.y
+
+        print("df", df)
+        print("y", y)
+
+        # S'assurer que df et y ont les mêmes index
+        df = df.loc[y.index].copy()
+
+        # Vérifier les dimensions après alignement
+        print(f"df dimensions: {df.shape}")
+        print(f"y dimensions: {y.shape}")
+        print(self.url_data.dtypes)
+
         mean_x = df.median()
-        numeric_columns = self.url_data.select_dtypes(include='number').columns
-        self.url_data[numeric_columns] = self.url_data[numeric_columns].fillna(0).astype(int)
+        self.url_data = self.url_data.fillna(mean_x)
 
-        my_url_data = self.url_data
-        
-        print("Colonnes dans les données de test :", my_url_data.columns)
+        print(self.url_data)
 
-        pred_res = model.predict_proba(my_url_data)[0][0]
-        print(pred_res)
-        if  pred_res > 0.5 :
-            print("pred_res est egale à",pred_res)
-            res = 'you are on top yessss'
-            find = True
-            print(res)
+        cols_to_remove = ['Keyword', 'Url', 'Top10']
+        self.url_data = self.url_data.drop(columns=[col for col in cols_to_remove if col in self.url_data.columns], errors='ignore')
 
-        else :
-            print("you are not on top")    
-        res = ''
-        find = True
-        if find :
-            print(res)
-            return res
-        find , res = self.try_for_1_column(model,df,y)
-        if find :
-            print(res)
-            return res
-        print('ùno for 1 col')
-        find , res = self.try_for_2_column(model,df,y)
-        if find :
-            return res
-        print('ùno for 2 col')
-        find , res = self.try_for_3_column(model,df,y)
-        if find :
-            return res
-        print('ùno for 3 col')
-        find , res = self.try_for_4_column(model,df,y)
-        if find :
-            return res
-        print('ùno for 4 col')
-        find , res = self.try_for_5_column(model,df,y)
-        if find :
-            return res
-        return "sorry i did't find any solution, good luck"
+        # Récupérer les noms des colonnes du modèle
+        model_columns = model.get_booster().feature_names
+
+        # Réorganiser les colonnes de self.url_data pour correspondre exactement à celles du modèle
+        self.url_data = self.url_data[model_columns].astype(np.float32)
+
+        # Ajouter les colonnes manquantes à self.url_data avec des valeurs par défaut (zéro)
+        missing_columns = set(model_columns) - set(self.url_data.columns)
+        for col in missing_columns:
+            self.url_data[col] = 0.0
+
+        try:
+            pred_res = model.predict_proba(self.url_data)[0][0]
+            print("*******pred_res*****", pred_res)
+
+            if pred_res > 0.5:
+                res = f'you are on top with a probability of {pred_res}'
+                find = True
+            else:
+                res = f'you are not on top with a probability of {pred_res}'
+                find = False
+            if find:
+                print(res)
+                return res, pred_res
+
+            # Try for combinations of 1 to 5 columns
+            for n in range(1, 6):
+                find, res = self.try_for_n_columns(model, df, y, n)
+                if find:
+                    print(f"found for {n} columns")
+                    return res, pred_res
+                print(f'no for {n} col')
+
+            return "sorry I didn't find any solution, good luck", pred_res
+        except ValueError as e:
+            print("Error during prediction:", e)
+            return "An error occurred during prediction", None
+
+
+
+
     
+
+
     

@@ -43,6 +43,12 @@
             min-height: 60px; /* Hauteur minimale */
         }
         
+        .chart-title {
+        font-size: 2rem; /* Ajuster la taille de la police selon vos besoins */
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 1rem;
+        }
         
     </style>
     
@@ -108,6 +114,7 @@
       <div class="card-header card-no-border">
           <div class="row">
               <div class="col-md-10">
+                <div class="chart-title">Keywords Prediction</div>
                   <div class="card mx-auto" id="default">
                       <div class="card-header">
                           <h5>Enter Keyword & Train</h5>
@@ -244,31 +251,37 @@
             <div id="results-container" class="results-container" style="height: 800px;">
               <table class="table">
                 <thead>
-                  <tr>
-                    <th class="text-center">Order</th>
-                    <th class="text-center">Field</th>
-                    <th class="text-center">Value</th>
-                    <th class="text-center">Min-Max</th>
-                  </tr>
+                    <tr>
+                        <th class="text-center">Order</th>
+                        <th class="text-center">Field</th>
+                        <th class="text-center">Value</th>
+                        <th class="text-center">Min-Max</th>
+                    </tr>
                 </thead>
                 <tbody id="results-body">
-                  {% if results_with_min_max %}
-                    {% for item_tuple in results_with_min_max %}
-                          <tr>
-                              <td class="text-center">{{ forloop.counter }}</td>
-                              <td class="text-center">{{ item_tuple.0 }}</td>
-                              <td class="text-center">{{ item_tuple.1 }}</td>
-                              <td class="text-center">{{ item_tuple.2 }}</td>
-                          </tr>
-                      {% endfor %}
-                  {% else %}
-                      <tr>
-                          <td colspan="4" class="text-center">No results found</td>
-                      </tr>
-                  {% endif %}
-              </tbody>
-              
-              </table>
+                    {% if results_with_min_max %}
+                        {% for item_tuple in results_with_min_max %}
+                            <tr>
+                                <td class="text-center">{{ forloop.counter }}</td>
+                                <td class="text-center">{{ item_tuple.0 }}</td>
+                                <td class="text-center">
+                                    {% if item_tuple.0 != 'id' and item_tuple.0 != 'nb url' %}
+                                        {{ item_tuple.1|floatformat:2 }}%
+                                    {% else %}
+                                        {{ item_tuple.1 }}
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">{{ item_tuple.2 }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center">No results found</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            
             </div>
           </div>
         </div>
@@ -292,7 +305,8 @@
                 // Exclure les champs 'id', 'nb_url' et 'precision' et les valeurs 'Min_Max'
                 if (fieldName !== 'id' && fieldName !== 'nb url' && fieldName !== 'precision') {
                     xAxisData.push(fieldName);
-                    yAxisData.push(parseFloat(cells[2].innerText)); // Valeur
+                    var value = parseFloat(cells[2].innerText) * 100; // Multiplier par 100
+                    yAxisData.push(value);
                 }
             }
         }
@@ -309,7 +323,20 @@
             }],
             xaxis: {
                 categories: xAxisData
-            }
+            }, 
+            dataLabels: {
+                    enabled: true,
+                    formatter: function (val) {
+                        return val.toFixed(2) + '%'; // Ajouter le symbole % et formater les valeurs
+                    }
+                },
+                tooltip: {
+                    y: {
+                        formatter: function (val) {
+                            return val.toFixed(2) + '%'; // Ajouter le symbole % et formater les valeurs
+                        }
+                    }
+                }
         };
 
         // Créer une instance de ApexCharts et rendre le graphique

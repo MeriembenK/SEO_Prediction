@@ -140,6 +140,44 @@ class ResponseBuilder:
 
         return df5
     
+    def get_min_max_url(self):
+        # Accéder aux données d'entraînement stockées dans le modèle
+        X = self.trainedModels.X_train
+        y = self.trainedModels.y_train
+        
+        print("Premières lignes de X:")
+        print(X.head(6))
+        print("Longueur de 'X':", len(X))
+        print("Nombre de colonnes dans 'X':", len(X.columns))
+
+        print("Premières lignes de y:")
+        print(y.head(6))
+        print("Longueur de 'y':", len(y))
+
+        # Get the columns that are needed from the initial data
+        x_init = self.df
+        x_init = x_init[list(X.columns)]
+
+        print("Premières lignes de x_init:")
+        print(x_init.head(6))
+        print("Longueur de 'x_init':", len(x_init))
+        print("Nombre de colonnes dans 'x_init':", len(x_init.columns))
+        
+        # Align y with the index of x_init
+        y_aligned = y.reindex(x_init.index, fill_value=False)
+        df1 = x_init[y_aligned == False]
+
+        # Get the median of the top data 
+        df2 = df1.median().to_frame().T
+        # Make a class here (range of 5)
+        df4 = pd.concat([df2-2, df2+3], ignore_index=True)
+        # Ensure that the min is >= 0
+        df4 = df4.applymap(lambda x: x if x > 0 else 0)
+        # Format the data
+        df4 = df4.applymap('{:,.0f}'.format)
+        df5 = (df4.iloc[0] + ' - ' + df4.iloc[1]).to_frame().T
+
+        return df5
 
     def get_table_of_result(self):
         print('hello hello hello : ')

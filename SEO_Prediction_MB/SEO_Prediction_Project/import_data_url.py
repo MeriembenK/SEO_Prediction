@@ -9,7 +9,7 @@ import numpy as np
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'SEO_Prediction_Project.settings')
 django.setup()
-from SEO_Prediction_App.models import Data, Keyword, Data_Url, Keyword_Url
+from SEO_Prediction_App.models import Data_Url
 
 
 def process_column(value):
@@ -213,11 +213,14 @@ def save_data_url_objects(data_url_objects):
     for data_url_object in data_url_objects:
         data_url_object.save()
 
+def delete_existing_data():
+    Data_Url.objects.all().delete()       
+
 
 def import_data_url_from_csv_files(directory_path):
     print("le path", directory_path)
     data_url_objects = []
-
+    delete_existing_data()
     for filename in os.listdir(directory_path):
         if filename.endswith(".csv"):
             csv_path = os.path.join(directory_path, filename)

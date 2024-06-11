@@ -5,44 +5,105 @@
 
 {% block css %}
 <!-- Plugins css start-->
-
+<style>
+    .chart-title {
+        font-size: 2rem; /* Ajuster la taille de la police selon vos besoins */
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    .url-input-container {
+        margin-top: 1rem;
+        text-align: left; /* Aligner le contenu à gauche */
+    }
+    .url-input-container label {
+        display: block;
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+    .url-input-container input {
+        width: 100%;
+        max-width: 300px;
+        margin-bottom: 1rem;
+        padding: 0.5rem;
+        font-size: 1rem;
+    }
+    .url-input-container button {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+    }
+</style>
 <!-- Plugins css Ends-->
 {% endblock %}
 
 {% block content %}
-
-
 <div class="page-body">
     <div class="container-fluid">
         {% include "layout/breadcrumb.html" %}
-        <div class="message-container">
-            {% if message %}
-                <p>{{ message }}</p>
-            {% else %}
-                <p>Aucun message à afficher pour le message principal</p>
-            {% endif %}
+        
+        <!-- Section pour URL Prediction -->
+        <div class="card">
+            <div class="card-body py-lg-3">
+                <div class="chart-container">
+                    <div class="chart-title">URL Prediction</div>
+                    <form method="POST" action="{% url 'url' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <select id="url-options" name="keyword" class="form-select" style="width: 100%; max-width: 300px;">
+                                {% for keyword in keywords %}
+                                    <option value="{{ keyword.keyword }}" {% if keyword.keyword == selected_keyword %} selected {% endif %}>{{ keyword.keyword }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="url-input-container">
+                            <label for="url-input">Enter your URL</label>
+                            <input type="text" id="url-input" name="url" class="form-control" placeholder="Enter URL here" value="{{ entered_url }}">
+                            <button type="submit" id="get-result" class="btn btn-primary">Get Result</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-
-        <div class="message-container">
-            {% if text %}
-                <p>{{ text }}</p>
-            {% else %}
-                <p>Aucun message à afficher pour le message secondaire</p>
-            {% endif %}
-        </div>
-
-        <div class="header">
-            {% if user_name %}
-                <p>Bonjour, {{ user_name }}</p>
-            {% else %}
-                <p>Bonjour, invité</p>
+   <!-- Section pour afficher le résultat de la prédiction -->
+{% if pred_res is not None %}
+<div class="card mt-3">
+    <div class="card-body py-lg-3">
+        <div class="chart-container">
+            <div class="chart-title" style="font-size: 18px; text-align: left;">Prediction Result</div>
+            <div style="margin-left: 20px;">
+                {% if pred_res > 0.5 %}
+                    <p style="font-size: 20px;">The URL is in the Top 10.</p>
+                {% else %}
+                    <p style="font-size: 20px;">The URL is not in the Top 10.</p>
+                {% endif %}
+            </div>
+            {% if df_min_max_top_15 and pred_res < 0.5 %}
+                <h2 style="text-align: left; margin-top: 14px; font-size: 14px">The min-max results for the first 12 important features:</h2>
+                <table class="table table-bordered" style="margin: 0 auto; width: 80%; text-align: center;">
+                    <thead>
+                        <tr>
+                            <th>Index</th>
+                            <th>Variable</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in df_min_max_top_15 %}
+                            <tr>
+                                <td>{{ row.index }}</td>
+                                <td>{{ row.variable }}</td>
+                                <td>{{ row.value }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             {% endif %}
         </div>
     </div>
 </div>
-
-
-
+{% endif %}
+    </div>
+</div>
 {% endblock %}
 
 {% block scriptcontent %}
@@ -51,7 +112,7 @@
 <script src="{% static 'assets/js/chart/apex-chart/stock-prices.js'%}"></script>
 <script src="{% static 'assets/js/chart/apex-chart/moment.min.js'%}"></script>
 <script src="{% static 'assets/js/notify/bootstrap-notify.min.js'%}"></script>
-<script  src="{% static 'assets/js/dashboard/default.js' %}"></script>
+<script src="{% static 'assets/js/dashboard/default.js' %}"></script>
 <script src="{% static 'assets/js/notify/index.js'%}"></script>
 <script src="{% static 'assets/js/typeahead/handlebars.js'%}"></script>
 <script src="{% static 'assets/js/typeahead/typeahead.bundle.js'%}"></script>

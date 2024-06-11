@@ -33,7 +33,7 @@ def process_column(value):
 
 
 # Importez d'abord les mots-clés
-def import_keywords_from_csv(directory_path, keyword_searshed):
+def import_keywords_from_csv(directory_path, keyword_searshed, user_instance):
     for filename in os.listdir(directory_path):
         if filename.endswith(".csv") and keyword_searshed in filename:
             csv_path = os.path.join(directory_path, filename)
@@ -41,7 +41,9 @@ def import_keywords_from_csv(directory_path, keyword_searshed):
  
             keyword_name = os.path.splitext(filename)[0]
 
-            keyword, _ = Keyword.objects.get_or_create(Keyword=keyword_name)
+            keyword, _ = Keyword.objects.get_or_create(keyword=keyword_name, user=user_instance)
+            
+
             # Si le Keyword existait déjà, vous pouvez mettre à jour d'autres attributs si nécessaire
 
 
