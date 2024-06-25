@@ -13,6 +13,7 @@ urlpatterns = [
     path('centre', views.index, name="centre"),
     path('url', views.url, name="url"),
     path('handle_keyword/', views.handle_keyword, name='handle_keyword'),
+    path('delete_url_predected/', delete_url_predected, name='delete_url_predected'),
     #-------------------------General(Dashboards,Widgets & Layout)---------------------------------------
     path('dashboard_02.html', views.dashboard_02, name="dashboard_02"),
     path('online_course', views.online_course, name="online_course"),

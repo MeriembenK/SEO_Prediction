@@ -222,9 +222,13 @@
     <!-- Contenu du deuxième card -->
   </div>
 </div>
+
+
+{% if results is not None %}
 <div class="container-fluid mt-3">
   <div class="card height-equal"> 
-    <div class="card-header card-no-border"> 
+    <div class="card-header card-no-border">
+     
       <div class="header-top">
         <h5 id="keyword-heading">Results for Keyword </h5>
         <script>
@@ -240,6 +244,8 @@
           });
         </script>
       </div>
+      
+
 
 
       <div class="container-fluid mt-3">
@@ -350,7 +356,7 @@
         document.querySelector('.results-graphic-container').style.display = 'block';
 
     }
-});
+ });
         
       </script>
       
@@ -366,128 +372,128 @@
       </div>
     </div>
 
-<div class="row">
-  <!-- Première colonne pour les deux premiers graphiques -->
-  <div class="col-md-6">
-    <div id="chart1" class="chart-container"></div>
+  <div class="row">
+    <!-- Première colonne pour les deux premiers graphiques -->
+    <div class="col-md-6">
+      <div id="chart1" class="chart-container"></div>
+    </div>
+    <!-- Deuxième colonne pour les deux derniers graphiques -->
+    <div class="col-md-6">
+      <div id="chart2" class="chart-container"></div>
+    </div>
   </div>
-  <!-- Deuxième colonne pour les deux derniers graphiques -->
-  <div class="col-md-6">
-    <div id="chart2" class="chart-container"></div>
-  </div>
-</div>
 
-</div>
+ </div>
 
-<div class="container-fluid mt-3">
-  <div class="card height-equal importance-container"> 
-    <div class="card-header card-no-border"> 
-      <div class="header-top">
-        <h5 style="margin-bottom: 15px;">Explanation of variables</h5>
-      </div>
-      <div id="explanation_container" style="min-width: 800px;">
-        <!-- Bouton 1 -->
-        <button class="btn btn-light rounded-pill mx-2 explanation-button active" data-start="0" data-end="3"> High importance</button>
-        <!-- Bouton 2 -->
-        <button class="btn btn-light rounded-pill mx-2 explanation-button" data-start="4" data-end="7">Medium importance</button>
-        <!-- Bouton 3 -->
-        <button class="btn btn-light rounded-pill mx-2 explanation-button" data-start="8" data-end="11">Low importance</button>
-      </div>
+  <div class="container-fluid mt-3">
+    <div class="card height-equal importance-container"> 
+      <div class="card-header card-no-border"> 
+        <div class="header-top">
+          <h5 style="margin-bottom: 15px;">Explanation of variables</h5>
+        </div>
+        <div id="explanation_container" style="min-width: 800px;">
+          <!-- Bouton 1 -->
+          <button class="btn btn-light rounded-pill mx-2 explanation-button active" data-start="0" data-end="3"> High importance</button>
+          <!-- Bouton 2 -->
+          <button class="btn btn-light rounded-pill mx-2 explanation-button" data-start="4" data-end="7">Medium importance</button>
+          <!-- Bouton 3 -->
+          <button class="btn btn-light rounded-pill mx-2 explanation-button" data-start="8" data-end="11">Low importance</button>
+        </div>
 
-      <div class="row" id="charts-row">
-        <!-- Cet élément sera rempli avec des graphiques par JavaScript -->
-      </div>
+        <div class="row" id="charts-row">
+          <!-- Cet élément sera rempli avec des graphiques par JavaScript -->
+        </div>
 
-      <div id="graphic_container">
-      </div>
+        <div id="graphic_container">
+        </div>
 
-      <script>
-    document.addEventListener('DOMContentLoaded', function() {
-  // Récupérer les boutons d'explication
-  const explanationButtons = document.querySelectorAll('.explanation-button');
+        <script>
+      document.addEventListener('DOMContentLoaded', function() {
+    // Récupérer les boutons d'explication
+    const explanationButtons = document.querySelectorAll('.explanation-button');
 
-  // Parcourir les boutons d'explication
-  explanationButtons.forEach(button => {
-    // Ajouter un écouteur d'événements pour chaque bouton
-    button.addEventListener('click', function() {
-      // Changer la couleur des boutons
-      explanationButtons.forEach(btn => btn.classList.remove('active'));
-      this.classList.add('active');
+    // Parcourir les boutons d'explication
+    explanationButtons.forEach(button => {
+      // Ajouter un écouteur d'événements pour chaque bouton
+      button.addEventListener('click', function() {
+        // Changer la couleur des boutons
+        explanationButtons.forEach(btn => btn.classList.remove('active'));
+        this.classList.add('active');
 
-      // Afficher les graphiques correspondants
-      const start = parseInt(this.getAttribute('data-start'));
-      const end = parseInt(this.getAttribute('data-end'));
-      let dataForCharts = JSON.parse('{{ data_for_charts_json|escapejs }}').slice(start, end + 1);
+        // Afficher les graphiques correspondants
+        const start = parseInt(this.getAttribute('data-start'));
+        const end = parseInt(this.getAttribute('data-end'));
+        let dataForCharts = JSON.parse('{{ data_for_charts_json|escapejs }}').slice(start, end + 1);
 
-      // Filtrer les valeurs NaN des données avant de les afficher
-      dataForCharts = dataForCharts.map(data => ({
-        ...data,
-        yes: data.yes.filter(value => !isNaN(value)),
-        no: data.no.filter(value => !isNaN(value))
-      }));
+        // Filtrer les valeurs NaN des données avant de les afficher
+        dataForCharts = dataForCharts.map(data => ({
+          ...data,
+          yes: data.yes.filter(value => !isNaN(value)),
+          no: data.no.filter(value => !isNaN(value))
+        }));
 
-      document.getElementById('charts-row').innerHTML = ''; // Effacer les anciens graphiques
+        document.getElementById('charts-row').innerHTML = ''; // Effacer les anciens graphiques
 
-      dataForCharts.forEach(function(data) {
-        const options = {
-          series: [
-            {
-              name: "Yes",
-              data: data.yes
+        dataForCharts.forEach(function(data) {
+          const options = {
+            series: [
+              {
+                name: "Yes",
+                data: data.yes
+              },
+              {
+                name: "No",
+                data: data.no
+              }
+            ],
+            chart: {
+              type: 'line',
+              height: 300, // Ajustez la hauteur des graphiques ici
+              width: '100%' // Pour que les graphiques s'adaptent à la largeur du conteneur
             },
-            {
-              name: "No",
-              data: data.no
-            }
-          ],
-          chart: {
-            type: 'line',
-            height: 300, // Ajustez la hauteur des graphiques ici
-            width: '100%' // Pour que les graphiques s'adaptent à la largeur du conteneur
-          },
-          title: {
-            text: 'Valeurs de l\'attribut ' + data.attribut
-          },
-          xaxis: {
-            categories: Array.from({ length: data.yes.length }, (_, i) => i + 1),
-            labels: {
-              formatter: function(val) {
-                return ''; // Supprimer les labels de l'axe x
+            title: {
+              text: 'Valeurs de l\'attribut ' + data.attribut
+            },
+            xaxis: {
+              categories: Array.from({ length: data.yes.length }, (_, i) => i + 1),
+              labels: {
+                formatter: function(val) {
+                  return ''; // Supprimer les labels de l'axe x
+                }
+              }
+            },
+            yaxis: {
+              labels: {
+                formatter: function(val) {
+                  return val.toFixed(2); // Afficher seulement 2 chiffres après la virgule dans l'axe y
+                }
               }
             }
-          },
-          yaxis: {
-            labels: {
-              formatter: function(val) {
-                return val.toFixed(2); // Afficher seulement 2 chiffres après la virgule dans l'axe y
-              }
-            }
-          }
-        };
+          };
 
-        const chartContainer = document.createElement('div');
-        chartContainer.classList.add('col-md-6', 'mb-3');
-        const chartId = 'chart-' + data.attribut;
-        chartContainer.setAttribute('id', chartId);
-        document.getElementById('charts-row').appendChild(chartContainer);
+          const chartContainer = document.createElement('div');
+          chartContainer.classList.add('col-md-6', 'mb-3');
+          const chartId = 'chart-' + data.attribut;
+          chartContainer.setAttribute('id', chartId);
+          document.getElementById('charts-row').appendChild(chartContainer);
 
-        const chart = new ApexCharts(document.getElementById(chartId), options);
-        chart.render();
+          const chart = new ApexCharts(document.getElementById(chartId), options);
+          chart.render();
+        });
       });
     });
-  });
 
-  // Simuler le clic sur le bouton "High importance" au chargement de la page
-  const highImportanceButton = document.querySelector('.explanation-button[data-start="0"]');
-  highImportanceButton.click();
-});
+    // Simuler le clic sur le bouton "High importance" au chargement de la page
+    const highImportanceButton = document.querySelector('.explanation-button[data-start="0"]');
+    highImportanceButton.click();
+  });
 
 
       </script>
     </div>
   </div>
 </div>
-
+{% endif %}
     {% endblock %}
 
 </body>

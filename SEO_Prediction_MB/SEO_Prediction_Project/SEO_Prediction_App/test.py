@@ -4,7 +4,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'SEO_Prediction_Project.settings
 django.setup() 
 from Predictive.data_colector import DataColector 
 from Predictive.url_Predict import UrlPredect
-from .import_data import import_data_from_csv_files, import_keywords_from_csv
+from .import_data import import_data_from_csv_files, import_keywords_from_csv, delete_csv_file
 from SEO_Prediction_App.models import Data, Keyword
 from django.http import HttpRequest 
 from django.contrib.auth.models import User
@@ -36,6 +36,7 @@ def run_script_with_keyword(keyword_searched, user_instance):
     
     import_keywords_from_csv(data_sets_directory, keyword_searched, user_instance)
     import_data_from_csv_files(data_sets_directory, keyword_searched)
+    delete_csv_file(data_sets_directory, keyword_searched)
 
 
 """tests = Test.objects.all()

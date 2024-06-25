@@ -207,6 +207,18 @@ def import_data_from_csv_files(directory_path, keyword_searched):
             print(data_dict)
     remove_duplicates_in_database()
 
+def delete_csv_file(directory_path, keyword_searched):
+    for filename in os.listdir(directory_path):
+       # Vérifier si le fichier se termine par ".csv" et contient le mot-clé recherché
+        if filename.endswith(".csv") and keyword_searched in filename:
+            # Construire le chemin complet vers le fichier
+            csv_path = os.path.join(directory_path, filename)
+            # Supprimer le fichier
+            os.remove(csv_path)
+            print(f"File {filename} deleted")
+
+
+
 def remove_duplicates_in_database():
     # Ajoutez toutes les colonnes nécessaires pour construire la clé unique
     unique_key_columns = [

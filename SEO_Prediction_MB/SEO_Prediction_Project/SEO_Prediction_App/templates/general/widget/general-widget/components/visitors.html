@@ -120,13 +120,13 @@
                                         <th>Precision</th>
                                         {% for attribute in attribute_names %}
                                             {% if attribute != 'id' and attribute != 'nb url' and attribute != 'precision' %}
-                                                <th>{{ attribute }} (Min_Max)</th>
+                                                <th>{{ attribute }} Score(Min_Max)</th>
                                             {% endif %}
                                         {% endfor %}
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for test in tests_with_min_max_values %}
+                                    {% for test in tests_with_min_max_values reversed %} <!-- Inverser l'itération pour trier par date croissante -->
                                         <tr data-test-date="{{ test.date_test }}" data-test-time="{{ test.hour_test }}">
                                             <td class="custom-checkbox">
                                                 <input type="checkbox" class="row-checkbox">
@@ -155,20 +155,19 @@
                         <div class="pagination-container">
                             <button id="prev" class="btn btn-primary">Previous</button>
                             <button id="next" class="btn btn-primary">Next</button>
-                        </div>
-                        <div class="delete">
                             <button id="delete-selected" class="btn btn-danger" style="margin-left: 10px;">Delete</button>
                         </div>
+                        
                         <script>
                             document.addEventListener("DOMContentLoaded", function() {
                                 const rows = Array.from(document.querySelectorAll("#keyword-table tbody tr"));
                                 const rowsPerPage = 10;
                                 let currentPage = 1;
-
+                        
                                 function displayRows(page) {
                                     const start = (page - 1) * rowsPerPage;
                                     const end = page * rowsPerPage;
-
+                        
                                     rows.forEach((row, index) => {
                                         if (index >= start && index < end) {
                                             row.style.display = '';
@@ -176,54 +175,54 @@
                                             row.style.display = 'none';
                                         }
                                     });
-
+                        
                                     document.getElementById("prev").disabled = page === 1;
                                     document.getElementById("next").disabled = end >= rows.length;
                                 }
-
+                        
                                 document.getElementById("prev").addEventListener("click", () => {
                                     if (currentPage > 1) {
                                         currentPage--;
                                         displayRows(currentPage);
                                     }
                                 });
-
+                        
                                 document.getElementById("next").addEventListener("click", () => {
                                     if (currentPage * rowsPerPage < rows.length) {
                                         currentPage++;
                                         displayRows(currentPage);
                                     }
                                 });
-
+                        
                                 // Affichage initial
                                 displayRows(currentPage);
                             });
-                        </script>
-                        <script>
+                        
                             document.addEventListener("DOMContentLoaded", function() {
                                 const deleteButton = document.getElementById("delete-selected");
                                 const rowCheckboxes = document.querySelectorAll(".row-checkbox");
                                 const table = document.getElementById('keyword-table');
-
+                        
                                 let deleteMode = false;
-
-                                // Afficher/Masquer les cases à cocher et supprimer les lignes sélectionnées
+                        
+                                // Fonction pour afficher/masquer les checkboxes et gérer la suppression
                                 deleteButton.addEventListener("click", function() {
                                     const selectedRows = document.querySelectorAll(".row-checkbox:checked");
-
+                        
                                     if (!deleteMode) {
                                         table.classList.add('show-checkboxes');
+                                        deleteButton.textContent = 'Confirm Delete';
                                         deleteMode = true;
                                     } else {
                                         if (selectedRows.length > 0) {
                                             const testDates = Array.from(selectedRows).map(checkbox => checkbox.closest("tr").getAttribute("data-test-date")).filter(Boolean);
                                             const testTimes = Array.from(selectedRows).map(checkbox => checkbox.closest("tr").getAttribute("data-test-time")).filter(Boolean).map(normalizeTimeFormat);
-
+                        
                                             // Créer un FormData et ajouter les dates et les heures des tests
                                             const formData = new FormData();
                                             testDates.forEach(date => formData.append('test_dates[]', date));
                                             testTimes.forEach(time => formData.append('test_times[]', time));
-
+                        
                                             // Requête AJAX pour supprimer les tests
                                             fetch("{% url 'delete_tests' %}", {
                                                 method: 'POST',
@@ -237,7 +236,9 @@
                                                         checkbox.closest("tr").remove();
                                                     });
                                                     table.classList.remove('show-checkboxes');
+                                                    deleteButton.textContent = 'Delete';
                                                     deleteMode = false;
+                                                    location.reload(); // Recharger la page après la suppression
                                                 } else {
                                                     console.error('Failed to delete tests');
                                                 }
@@ -246,17 +247,19 @@
                                             });
                                         } else {
                                             table.classList.remove('show-checkboxes');
+                                            deleteButton.textContent = 'Delete';
                                             deleteMode = false;
                                         }
                                     }
                                 });
-                                
+                        
                                 function normalizeTimeFormat(timeStr) {
                                     return timeStr.replace(/a\.m\./, 'AM').replace(/p\.m\./, 'PM');
                                 }
                             });
                         </script>
-                           
+                        
+                        
                           
                         <div class="chart-container">
                             <div class="chart-title">Relative importance of indicators for keywords.</div>

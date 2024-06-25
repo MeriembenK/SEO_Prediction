@@ -9,7 +9,7 @@ from django.http.response import HttpResponseRedirect
 from django.http import HttpResponse
 from django.contrib.auth.models import User
 from . import test
-from .models import Data, Test, MinMaxValue, Keyword
+from .models import Data, Test, MinMaxValue, Keyword, UrlPredected, MinMaxUrlValue   
 from Predictive.train_Models import TrainModels
 from Predictive.url_Predict import UrlPredect
 from Predictive.response_Builder import ResponseBuilder
@@ -21,9 +21,11 @@ from django.utils.functional import SimpleLazyObject
 from django.http import JsonResponse
 import json
 import smtplib
+from django.utils import timezone
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
+from django.views.decorators.csrf import csrf_protect
 from import_data_url import import_data_url_from_csv_files
 
 
@@ -67,8 +69,17 @@ def url(request):
 
     if not isinstance(user_instance, User):
         return HttpResponse("Utilisateur non valide", status=400)
+
     df_min_max_top_15 = None
     df_min_max_top_15_list = None
+    thedf_test_list = None
+    filtred_thedf_test_list = None
+    df_importance_top_15 = None
+    df_importance_top_15_list = None
+    df_importance_top_15_json = None
+    df_min_max_split = None
+    df_min_max_split_json = None
+    
     if request.method == "POST":
         selected_keyword = request.POST.get('keyword')
         entered_url = request.POST.get('url')
@@ -87,7 +98,7 @@ def url(request):
         trainer.keyword = keyword
         df = trainer.read_my_data()
         trainer.df = df
-        print("**************Trainer_df**************",trainer.df)
+        print("**************Trainer_df**************", trainer.df)
 
         trainer.df = trainer.df.drop(columns=["Keyword"])
         trainer.df = trainer.df.drop(columns=["Url"])
@@ -113,9 +124,7 @@ def url(request):
 
         data_test, testing = up.get_data_for_1_urls(specific_url, keyword, df, response_builder)
 
-        print("data test & testing", data_test, testing)
-
-        if testing == False:
+        if not testing:
             csv_filename = './Url_data/url_data_output.csv'
             up.url_data.to_csv(csv_filename, index=False)
             print(f"Data saved to {csv_filename}")
@@ -128,24 +137,126 @@ def url(request):
 
         up.url_data = thedf_test
         up.url_data = up.exclude_and_convert_columns(up.url_data)
-
         result, pred_res = up.try_for_columns(trained_model, response_builder)
         print(pred_res)
 
+        if pred_res is not None:
+            if pred_res > 0.5:
+                top10_value = True
+            else:
+                top10_value = False
+        else:
+            top10_value = False 
+
         df_min_max = response_builder.get_min_max_url()
-        print(df_min_max)
         # Filtrer les résultats pour ne conserver que les 15 premières fonctionnalités importantes
         top_15_columns = df_importance_top_15['variable'].tolist()
         df_min_max_top_15 = df_min_max[top_15_columns]
-
-        print("Les résultats min-max pour les 15 premières fonctionnalités importantes :")
-        print(df_min_max_top_15)
-
+  
         # Convertir en liste de dictionnaires
         df_min_max_top_15_list = df_min_max_top_15.reset_index().melt(id_vars=['index']).to_dict(orient='records')
-        print(df_min_max_top_15_list)
+        for i, row in enumerate(df_min_max_top_15_list):
+           row['index'] = i + 1
+        
+        # Convertir thedf_test en liste de dictionnaires
+        thedf_test_list = thedf_test.to_dict(orient='records')
 
-    print("the user name", user_instance)
+        top_15_column_names = [row['variable'] for row in df_min_max_top_15_list]
+        # Créez une nouvelle liste pour stocker les dictionnaires filtrés
+        filtred_thedf_test_list = []
+
+        # Parcourir chaque ligne de thedf_test_list
+        for row in thedf_test_list:
+            # Créez un nouveau dictionnaire pour stocker les valeurs filtrées
+            filtered_row = {}
+            # Parcourez chaque clé (nom de colonne) dans la ligne
+            for key in row.keys():
+                # Si la clé est également dans les noms de colonnes top_15_column_names
+                if key in top_15_column_names:
+                    # Ajoutez cette paire clé-valeur au dictionnaire filtré
+                    filtered_row[key] = row[key]
+            # Ajoutez le dictionnaire filtré à la liste de résultats
+            filtred_thedf_test_list.append(filtered_row)
+        
+        # Puisque l'index a été mis à jour, vous pouvez l'utiliser maintenant dans la boucle suivante
+        for row in df_min_max_top_15_list:
+            # Récupérez le nom de la variable dans df_min_max_top_15_list
+            variable_name = row['variable']
+            # Parcourez chaque dictionnaire dans filtred_thedf_test_list
+            for filtered_row in filtred_thedf_test_list:
+                # Vérifiez si le nom de la variable correspond
+                if variable_name in filtered_row:
+                    # Mise à jour de la valeur dans df_min_max_top_15_list
+                    row['value_from_filtr_thedf_test'] = filtered_row[variable_name]
+                    # Sortez de la boucle interne si la correspondance est trouvée pour cette variable
+                    break
+
+        df_min_max_split = []
+        for row in df_min_max_top_15_list:
+            min_val_str, max_val_str = row['value'].split('-')
+            # Supprimer les espaces blancs et convertir en float
+            min_val = min_val_str.strip()
+            max_val = max_val_str.strip()
+            df_min_max_split.append({
+                'variable': row['variable'],
+                'min': min_val,
+                'max': max_val,
+            })
+
+        for row in df_min_max_split:
+            # Récupérez le nom de la variable dans df_min_max_top_15_list
+            variable_name = row['variable']
+            # Parcourez chaque dictionnaire dans filtred_thedf_test_list
+            for filtered_row in filtred_thedf_test_list:
+                # Vérifiez si le nom de la variable correspond
+                if variable_name in filtered_row:
+                    # Mise à jour de la valeur dans df_min_max_top_15_list
+                    row['test_value'] = filtered_row[variable_name]
+                    # Sortez de la boucle interne si la correspondance est trouvée pour cette variable
+                    break
+
+        # Extraire les données du premier élément de la liste
+        data = filtred_thedf_test_list[0]
+
+        # Créer un dictionnaire pour les champs et les valeurs
+        indc_fields = [f'indc{i}' for i in range(1, 16)]
+        value_fields = [f'value_indc{i}' for i in range(1, 16)]
+
+        # Créer une instance de UrlPredected
+        url_predicted_instance = UrlPredected(
+            Url=entered_url,
+            Keyword=selected_keyword,
+            date_test=timezone.now().date(),
+            hour_test=timezone.now().time(),
+            Top10=top10_value
+        )
+
+
+        # Ajouter les valeurs aux champs indc et value_indc
+        for indc_field, value_field, (key, value) in zip(indc_fields, value_fields, data.items()):
+            setattr(url_predicted_instance, indc_field, key)
+            setattr(url_predicted_instance, value_field, value)
+
+        # Sauvegarder l'instance dans la base de données
+        url_predicted_instance.save()
+
+        print("url_predicted_instance.Top10 :",url_predicted_instance.Top10 )
+
+        # Créer les instances de MinMaxUrlValue associées
+        for key, value in data.items():
+            min_max_value = df_min_max[key].iloc[0] if key in df_min_max else ''
+            min_max_instance = MinMaxUrlValue(
+                urlPredected_instance=url_predicted_instance,
+                attribute_name=key,
+                attribute_value=value,
+                min_max=min_max_value
+            )
+            min_max_instance.save()
+
+        # Convertir le DataFrame en une liste de dictionnaires
+        df_importance_top_15_list = df_importance_top_15.to_dict(orient='records')
+        df_importance_top_15_json = json.dumps(df_importance_top_15_list)
+        df_min_max_split_json = json.dumps(df_min_max_split)
 
     # Récupère uniquement les mots-clés associés à l'utilisateur actuellement authentifié
     keywords = Keyword.objects.filter(user=user_instance)
@@ -158,10 +269,14 @@ def url(request):
         'selected_keyword': selected_keyword,
         'entered_url': entered_url,
         'pred_res': pred_res,
-        'df_min_max_top_15': df_min_max_top_15_list
+        'df_min_max_top_15': df_min_max_top_15_list,
+        'thedf_test': filtred_thedf_test_list, 
+        'df_importance_top_15': df_importance_top_15_json,
+        'df_min_max_split': df_min_max_split_json # Ajouter au contexte
     }
 
     return render(request, 'general/dashboard/default/url.html', context)
+
 
 User = get_user_model()
 def handle_keyword(request):
@@ -216,9 +331,14 @@ def handle_keyword(request):
 
         # Read data from Data Base
         trainer.read_my_data()
+        colonnes_exclues = ['Keyword','Url']
+        trainer.df = trainer.df.drop(columns=colonnes_exclues, errors='ignore')
         trainer.df = trainer.data_to_drop(trainer.df)
         trainer.preprocessing()
 
+        print(trainer.df)
+        
+        #trainer.df = trainer.df.drop(columns=["Keyword"])
         trained_models, X_train, y_train, X_test, y_test=trainer.Final_get_importance(user_instance)
         response_builder.trainedModels= trained_models
         response_builder.df = trainer.df
@@ -271,8 +391,6 @@ def handle_keyword(request):
             columns_to_keep = list(set_champs - set_exclude & set_min_max)
             # Alternativement, vous pouvez utiliser une compréhension de liste si vous préférez rester avec des listes
             columns_to_keep = [field for field in champs_restaurés if field not in columns_to_exclude and field in min_max]
-
-            print(columns_to_keep)
 
             # Filtrer min_max pour ne conserver que les clés de columns_to_keepzs
             min_max_filtered = {key: min_max[key] for key in columns_to_keep}
@@ -470,6 +588,133 @@ def delete_tests(request):
     else:
         return JsonResponse({'status': 'error', 'message': 'No valid dates/times provided'}, status=400)
     
+@login_required(login_url="/login_home")
+@require_POST
+@csrf_protect
+def delete_url_predected(request):
+    test_dates = request.POST.getlist('test_dates[]')
+    test_times = request.POST.getlist('test_times[]')
+
+    # Ajouter du journal de débogage pour vérifier les données reçues
+    print('Received test dates:', test_dates)
+    print('Received test times:', test_times)
+
+    if not (test_dates and test_times) or len(test_dates) != len(test_times):
+        return JsonResponse({'status': 'error', 'message': 'Mismatch or missing dates/times'}, status=400)
+
+    test_datetime_pairs = []
+    for test_date, test_time in zip(test_dates, test_times):
+        try:
+            # Stripping any leading/trailing whitespace
+            test_date = test_date.strip()
+            test_time = test_time.strip()
+
+            # Normalize time format
+            test_time = test_time.replace("a.m.", "AM").replace("p.m.", "PM")
+
+            # Attempt to parse date and time with proper formats
+            date_obj = datetime.strptime(test_date, '%B %d, %Y').date()
+            time_obj = datetime.strptime(test_time, '%I:%M %p').time()
+
+            # If parsing is successful, add to the list of valid date-time pairs
+            test_datetime_pairs.append((date_obj, time_obj))
+        except ValueError as e:
+            print(f"Invalid date or time format for {test_date} {test_time}: {e}")
+
+    if test_datetime_pairs:
+        try:
+            for date_obj, time_obj in test_datetime_pairs:
+                # Debugging log to verify deletion process
+                print(f"Attempting to delete UrlPredected entries with date: {date_obj} and time: {time_obj}")
+
+                # Fetching the UrlPredected objects to verify
+                url_predected_to_delete = UrlPredected.objects.filter(
+                    date_test=date_obj,
+                    hour_test__hour=time_obj.hour,
+                    hour_test__minute=time_obj.minute
+                )
+                print(f"Found {url_predected_to_delete.count()} entries to delete")
+
+                for url_predected in url_predected_to_delete:
+                    print(f"UrlPredected found: {url_predected.id}")
+
+                if url_predected_to_delete.exists():
+                    # Supprimer les entrées de MinMaxUrlValue associées aux UrlPredected sélectionnés
+                    ids_to_delete = list(url_predected_to_delete.values_list('id', flat=True))
+                    MinMaxUrlValue.objects.filter(urlPredected_instance__id__in=ids_to_delete).delete()
+
+                    # Supprimer les UrlPredected eux-mêmes
+                    deleted_count, _ = url_predected_to_delete.delete()
+                    print(f"Deleted {deleted_count} entries")
+                else:
+                    print(f"No entries found for date: {date_obj} and time: {time_obj}")
+
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            print(f"Error: {str(e)}")  # Debugging
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    else:
+        return JsonResponse({'status': 'error', 'message': 'No valid dates/times provided'}, status=400)
+@login_required(login_url="/login_home")
+def chart_widget(request):
+    # Récupérer toutes les instances de UrlPredected avec leurs valeurs MinMaxUrlValue associées
+    url_predected_instances = UrlPredected.objects.prefetch_related('min_max_url_values').all()
+    
+    data = []
+    attributes = set()  # Utiliser un ensemble pour éviter les doublons d'attributs
+
+    for instance in url_predected_instances:
+        row = {
+            'date_test': instance.date_test,
+            'hour_test': instance.hour_test,  # Ajouter l'heure du test à la structure de données
+            'Url': instance.Url,
+            'Keyword': instance.Keyword,
+            'Top10' : instance.Top10,
+            'attributes_values': {}  # Dictionnaire pour stocker les valeurs et min_max des attributs
+        }
+
+        # Récupérer les valeurs MinMaxUrlValue associées à cette instance de UrlPredected
+        for min_max_value in instance.min_max_url_values.all():
+            attribute_name = min_max_value.attribute_name
+            attribute_value = min_max_value.attribute_value
+            min_max = min_max_value.min_max
+
+            # Ajouter l'attribut à l'ensemble pour trier plus tard
+            attributes.add(attribute_name)
+
+            # Ajouter la valeur de l'attribut et son min_max à row['attributes_values']
+            row['attributes_values'][attribute_name] = {
+                'value': attribute_value,
+                'min_max': min_max
+            }
+
+        data.append(row)
+
+    sorted_attributes = sorted(attributes)  # Tri des attributs pour l'affichage dans le tableau
+
+    # Restructurer les données pour faciliter l'affichage dans le template
+    structured_data = []
+    for row in data:
+        structured_row = {
+            'date_test': row['date_test'],
+            'hour_test': row['hour_test'],
+            'Url': row['Url'],
+            'Keyword': row['Keyword'],
+            'Top10': row['Top10'],
+            'attributes_values': [row['attributes_values'].get(attr, {'value': '-', 'min_max': '-'}) for attr in sorted_attributes]
+        }
+        structured_data.append(structured_row)
+    
+    print(structured_data)
+
+    context = {
+        "breadcrumb": {"parent": "Widgets", "child": "Chart"},
+        "data": structured_data,
+        "sorted_attributes": sorted_attributes
+    }
+
+    return render(request, "general/widget/chart-widget/chart-widget.html", context)
+
 
 @login_required(login_url="/login_home")
 def dashboard_02(request):
@@ -487,12 +732,6 @@ def crypto(request):
     return render(request,"general/dashboard/crypto/crypto.html",context)
 
     
-
-@login_required(login_url="/login_home")
-def chart_widget(request):
-    context = { "breadcrumb":{"parent":"Widgets", "child":"Chart"}}
-    return render(request,"general/widget/chart-widget/chart-widget.html",context)
-
 
 # #-----------------Layout
 

@@ -4,17 +4,16 @@
 {% load sass_tags %}
 
 {% block css %}
-<!-- Plugins css start-->
 <style>
     .chart-title {
-        font-size: 2rem; /* Ajuster la taille de la police selon vos besoins */
+        font-size: 2rem;
         font-weight: bold;
         text-align: center;
         margin-bottom: 1rem;
     }
     .url-input-container {
         margin-top: 1rem;
-        text-align: left; /* Aligner le contenu à gauche */
+        text-align: left;
     }
     .url-input-container label {
         display: block;
@@ -32,8 +31,23 @@
         padding: 0.5rem 1rem;
         font-size: 1rem;
     }
+    .error-message {
+        color: red;
+        font-size: 1rem;
+        display: none;
+    }
+    .chart-container {
+        margin-top: 2rem;
+    }
+    #bar-chart {
+        height: 600px;
+    }
+    #pie-chart {
+        width: 500px;
+        height: 500px;
+        margin: 0 auto;
+    }
 </style>
-<!-- Plugins css Ends-->
 {% endblock %}
 
 {% block content %}
@@ -41,12 +55,11 @@
     <div class="container-fluid">
         {% include "layout/breadcrumb.html" %}
         
-        <!-- Section pour URL Prediction -->
         <div class="card">
             <div class="card-body py-lg-3">
                 <div class="chart-container">
                     <div class="chart-title">URL Prediction</div>
-                    <form method="POST" action="{% url 'url' %}">
+                    <form id="url-form" method="POST" action="{% url 'url' %}">
                         {% csrf_token %}
                         <div class="mb-3">
                             <select id="url-options" name="keyword" class="form-select" style="width: 100%; max-width: 300px;">
@@ -58,72 +71,207 @@
                         <div class="url-input-container">
                             <label for="url-input">Enter your URL</label>
                             <input type="text" id="url-input" name="url" class="form-control" placeholder="Enter URL here" value="{{ entered_url }}">
+                            <span id="error-message" class="error-message">Please enter a URL.</span>
                             <button type="submit" id="get-result" class="btn btn-primary">Get Result</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
-   <!-- Section pour afficher le résultat de la prédiction -->
-{% if pred_res is not None %}
+
+        {% if pred_res is not None %}
+        <div class="card mt-3">
+            <div class="card-body py-lg-3">
+                <div class="chart-container">
+                    <div class="chart-title" style="font-size: 18px; text-align: left;">Prediction Result</div>
+                    <div style="margin-left: 20px;">
+                        {% if pred_res > 0.5 %}
+                            <p style="font-size: 20px;">The URL is in the Top 10.</p>
+                        {% else %}
+                            <p style="font-size: 20px;">The URL is not in the Top 10.</p>
+                        {% endif %}
+                    </div>
+                    {% if df_min_max_top_15 and pred_res < 0.5 %}
+                        <h2 style="text-align: left; margin-top: 14px; font-size: 14px">What to do for the first 15 important features:</h2>
+                        <table class="table table-bordered" style="margin: 0 auto; width: 80%; text-align: center;">
+                            <thead>
+                                <tr>
+                                    <th>Index</th>
+                                    <th>Variable</th>
+                                    <th>Value of url's indicator</th>
+                                    <th>Value min-max recommended</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in df_min_max_top_15 %}
+                                    <tr>
+                                        <td>{{ row.index }}</td>
+                                        <td>{{ row.variable }}</td>
+                                        <td>{{ row.value_from_filtr_thedf_test }}</td>
+                                        <td>{{ row.value }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+   
+{% if df_min_max_top_15 and pred_res < 0.5 %}
 <div class="card mt-3">
     <div class="card-body py-lg-3">
-        <div class="chart-container">
-            <div class="chart-title" style="font-size: 18px; text-align: left;">Prediction Result</div>
-            <div style="margin-left: 20px;">
-                {% if pred_res > 0.5 %}
-                    <p style="font-size: 20px;">The URL is in the Top 10.</p>
-                {% else %}
-                    <p style="font-size: 20px;">The URL is not in the Top 10.</p>
-                {% endif %}
+        <div class="container mt-5">
+            <h2 class="chart-title">Top 15 Feature Importances</h2>
+            <div class="chart-container">
+                <canvas id="bar-chart"></canvas>
+                <canvas id="line-chart"></canvas>
             </div>
-            {% if df_min_max_top_15 and pred_res < 0.5 %}
-                <h2 style="text-align: left; margin-top: 14px; font-size: 14px">The min-max results for the first 12 important features:</h2>
-                <table class="table table-bordered" style="margin: 0 auto; width: 80%; text-align: center;">
-                    <thead>
-                        <tr>
-                            <th>Index</th>
-                            <th>Variable</th>
-                            <th>Value</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in df_min_max_top_15 %}
-                            <tr>
-                                <td>{{ row.index }}</td>
-                                <td>{{ row.variable }}</td>
-                                <td>{{ row.value }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% endif %}
         </div>
     </div>
 </div>
 {% endif %}
-    </div>
-</div>
 {% endblock %}
 
 {% block scriptcontent %}
-<script src="{% static 'assets/js/clock.js'%}"></script>
-<script src="{% static 'assets/js/chart/apex-chart/apex-chart.js'%}"></script>
-<script src="{% static 'assets/js/chart/apex-chart/stock-prices.js'%}"></script>
-<script src="{% static 'assets/js/chart/apex-chart/moment.min.js'%}"></script>
-<script src="{% static 'assets/js/notify/bootstrap-notify.min.js'%}"></script>
-<script src="{% static 'assets/js/dashboard/default.js' %}"></script>
-<script src="{% static 'assets/js/notify/index.js'%}"></script>
-<script src="{% static 'assets/js/typeahead/handlebars.js'%}"></script>
-<script src="{% static 'assets/js/typeahead/typeahead.bundle.js'%}"></script>
-<script src="{% static 'assets/js/typeahead/typeahead.custom.js'%}"></script>
-<script src="{% static 'assets/js/typeahead-search/handlebars.js'%}"></script>
-<script src="{% static 'assets/js/typeahead-search/typeahead-custom.js'%}"></script>
-<script src="{% static 'assets/js/height-equal.js'%}"></script>
-<script src="{% static 'assets/js/animation/wow/wow.min.js'%}"></script>
-<!-- Plugins JS start-->
-<!-- Plugins JS Ends-->
-{% endblock %}
-{% block script %} 
-<script>new WOW().init();</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Form validation
+        const form = document.getElementById('url-form');
+        const urlInput = document.getElementById('url-input');
+        const errorMessage = document.getElementById('error-message');
+
+        form.addEventListener('submit', function (event) {
+            if (urlInput.value.trim() === '') {
+                event.preventDefault();
+                errorMessage.style.display = 'block';
+            } else {
+                errorMessage.style.display = 'none';
+            }
+        });
+
+        // Utilisez JSON.parse pour convertir la chaîne JSON en objet JavaScript
+        const df_importance_top_15 = JSON.parse('{{ df_importance_top_15|escapejs }}');
+        console.log("df_importance_top_15:", df_importance_top_15);
+
+        const df_min_max_split = JSON.parse('{{ df_min_max_split|escapejs }}');
+        console.log("df_min_max_split:", df_min_max_split);
+
+        const ctxBar = document.getElementById('bar-chart').getContext('2d');
+        const ctxLine = document.getElementById('line-chart').getContext('2d');
+
+        const labels = df_importance_top_15.map(row => row.variable);
+        const values = df_importance_top_15.map(row => row.score * 100);
+
+        // Fonction pour générer une couleur aléatoire
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        const backgroundColors = values.map(() => getRandomColor());
+        const borderColors = backgroundColors.map(color => color);
+
+        const barChart = new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Importance Score (%)',
+                    data: values,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Top 15 Feature Importances (%)'
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Features'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Importance Score'
+                        },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        const lineLabels = df_min_max_split.map(row => row.variable);
+        const minValues = df_min_max_split.map(row => parseFloat(row.min));
+        const maxValues = df_min_max_split.map(row => parseFloat(row.max));
+        const testValues = df_min_max_split.map(row => parseFloat(row.test_value)); // Ajout des valeurs de test
+
+        const lineChart = new Chart(ctxLine, {
+            type: 'line',
+            data: {
+                labels: lineLabels,
+                datasets: [{
+                    label: 'Min Values',
+                    data: minValues,
+                    borderColor: 'blue',
+                    fill: false
+                }, {
+                    label: 'Max Values',
+                    data: maxValues,
+                    borderColor: 'red',
+                    fill: false
+                }, {
+                    label: 'Test Values',
+                    data: testValues,
+                    borderColor: 'green',
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Min, Max and Test Values of Features'
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Features'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Values'
+                        },
+                        beginAtZero: true,
+                        suggestedMax: Math.max(...maxValues) * 1.1 // Ajoutez un peu d'espace en haut de l'échelle Y
+                    }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}
